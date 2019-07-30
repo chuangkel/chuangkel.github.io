@@ -1,10 +1,10 @@
 # Site settings
-title: BY Blog
-SEOTitle: 柏荧的博客 | BY Blog
+title: chuangkel
+SEOTitle: chuangkel的博客 | chuangkel
 header-img: img/post-bg-desk.jpg
 email: chuangkel@gmail.com
-description: "Every failure is leading towards success."
-keyword: "BY, BY Blog, 柏荧的博客, chuangkel, 邱柏荧, iOS, Apple, iPhone"
+description: "中国有句老话"
+keyword: " chuangkel,java,spring,学习记录"
 url: "http://chuangkel.github.io"          # your host, for absolute URL
 baseurl: ""      # for example, '/blog' if your blog hosted on 'host/blog'
 github_repo: "https://github.com/chuangkel/chuangkel.github.io.git" # you code repository
