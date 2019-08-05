@@ -11,6 +11,7 @@ tags:
     - 注解
 ---
 
+
 #  spring注解
 * @Autowired 和 @Resource的区别
     * 共同点：都可以作用于字段和方法

@@ -1,10 +1,10 @@
 # Site settings
-title: 慎独
+title: chuangkel
 SEOTitle: chuangkel的博客 | chuangkel
 header-img: img/post-bg-desk.jpg
 email: chuangkel@gmail.com
-description: "null"
-keyword: " chuangkel,java,spring,学习记录"
+description: "不积硅步,无以至千里。"
+keyword: " chuangkel,java,spring,spring boot,spring cloud"
 url: "http://chuangkel.github.io"          # your host, for absolute URL
 baseurl: ""      # for example, '/blog' if your blog hosted on 'host/blog'
 github_repo: "https://github.com/chuangkel/chuangkel.github.io.git" # you code repository
