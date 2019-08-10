@@ -12,7 +12,7 @@ tags:
 
 # 当HashMap遇ConcurrentHashMap
 
-> 将hashCode无符号右移，即低位等于高位和低位异或运算，防止高位相同低位不同的hashCode导致hash碰撞（因为使用的是低位，减少hash碰撞）
+> 将hashCode无符号右移，即低位等于高位和低位异或运算，减少高位相同低位不同的hashCode导致hash碰撞（因为使用的是低位，减少hash碰撞）
 
 ```java
 static final int hash(Object key) {
@@ -185,4 +185,27 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
 
 ### ConcurrentHashMap应用场景？
 
-> 统一管理线程池
+> 资源隔离中的线程池隔离，存储线程资源池，为每种请求类型创建一个线程池
+
+
+
+```JAVA
+// 在线用户管理类
+public class UserManager {
+    private Map<String, User> userMap = new ConcurrentHashMap<>();
+    
+    // 当用户登入时调用
+    public void onUserSignIn(String sessionId, User user) {
+        this.userMap.put(sessionId, user);
+    }
+    
+    // 当用户登出或超时时调用
+    public void onUserSignOut(String sessionId) {
+        this.userMap.remove(sessionId);
+    }
+    
+    public getUser(String sessionId) {
+        return this.userMap.get(sessionId);
+    }
+}
+```
