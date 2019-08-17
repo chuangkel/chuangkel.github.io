@@ -209,3 +209,86 @@ public class UserManager {
     }
 }
 ```
+
+
+
+## equals()和hashCode()
+
+### 1.为什么要重写hashCode()？
+
+存在根据对象属性去判断两个对象是否相等，则需要重写equals()方法，根据原则，也需要重写hashCode()方法。
+
+###  2.在什么场景下需要重写
+
+> java源码中对hashCode特性的论述如下
+
+* hashCode()是根据对象的属性来重写的，如果两次调用hashCode()时该对象的属性(参与计算hashCode的属性）都没变过，则要求返回的整型是相同的hashCode整数。如果属性已被修改，则返回的hashCode整数可以不同。
+
+* equals()相等，则hashCode()一定相等。
+* equals不相等，不要求hashCode不相等，但是尽量做到不相等，减少hash碰撞。
+
+### 怎么重写hashCode和equals()?
+
+#### 重写hashCode
+
+> * 参与计算的项：
+>   * 乘子：31 
+>
+>     * 选31作为乘子的原因：
+>       - 31是质数，是作为hashCode乘子的优选质数之一，根据多个质数统计得出。
+>       - 31可以被jvm优化，**31*i = (5 << i)  - i**,移位运算更快
+>
+>   * 对象的属性：
+>     * byte,boolean,short,char,int,float,double,long转换成int之后参与计算
+>     * 对象中引用的对象，调用改引用对象的hashCode()方法参与计算
+>
+>     JDK中String类重写hashCode()
+>
+> * 计算公式：
+>
+>   * result = c //c是对象属性转化成的整型值
+>   * result = 31*result+c//循环计算
+>
+> * 下面是String类的hashCode()
+
+```java
+ public int hashCode() {
+     int h = hash;
+     if (h == 0 && value.length > 0) {
+         char val[] = value;
+
+         for (int i = 0; i < value.length; i++) {
+             h = 31 * h + val[i];
+         }
+         hash = h;
+     }
+     return h;
+ }
+```
+
+> * 业务场景中重写hashCode()
+
+```java
+/** * hours */
+private int hour;
+/** * minutes */
+private int minute;
+/** * seconds */
+private final int second;
+@Override
+public int hashCode() {
+    int result = hour;
+    result = 31 * result + minute;
+    result = 31 * result + second;
+    return result;
+}
+```
+
+#### 重写equals()
+
+
+
+### 减少hash碰撞的方法
+
+
+
