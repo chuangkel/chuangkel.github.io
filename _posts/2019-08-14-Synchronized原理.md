@@ -81,3 +81,33 @@ public static void main(java.lang.String[]);
 #### 操作系统中的管程
 
 > 管程 (Monitors，也称为监视器) 是一种程序结构，结构内的多个子程序（对象或模块）形成的多个工作线程互斥访问共享资源。这些共享资源一般是硬件设备或一群变量。管程实现了在一个时间点，最多只有一个线程在执行管程的某个子程序。与那些通过修改数据结构实现互斥访问的并发程序设计相比(信号量实现互斥访问？)，管程实现很大程度上简化了程序设计。 管程提供了一种机制，线程可以临时放弃互斥访问，等待某些条件得到满足后，重新获得执行权恢复它的互斥访问。
+
+
+
+### 对象和管程（Monitor 监视器）
+
+> 每个对象（包括class对象）都有一个监视器。监视器有三部分，比较形象的比喻，special room只能有一个线程持有，wait root是挂起线程的队列，等待队列在hallway。
+
+![1566178299653](C:\Users\hspcadmin\AppData\Roaming\Typora\typora-user-images\1566178299653.png)
+
+> 在JAVA虚拟机中，每个对象(Object和class)通过某种逻辑关联监视器，为了实现监视器的互斥功能，每个对象(Object和class)都关联着一个监视器，对象可以有它自己的临界区，并且能够监视线程序列为了使线程协作，JAVA提供了wait()和notifyAll以及notify()实现挂起线程、唤醒另外一个等待的线程。
+
+![1566178354439](C:\Users\hspcadmin\AppData\Roaming\Typora\typora-user-images\1566178354439.png)
+
+和下面的图一样的：
+
+![1566195759821](C:\Users\hspcadmin\AppData\Roaming\Typora\typora-user-images\1566195759821.png)
+
+
+
+锁的升级
+
+偏向锁 -> 轻量级锁->偏向锁->重量级锁
+
+![img](..\img\偏向锁的撤销.png)
+
+
+
+
+
+![img](..\img\轻量级锁.png)
