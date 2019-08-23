@@ -292,3 +292,10 @@ public int hashCode() {
 
 
 
+
+
+
+
+LinkedHashMap
+
+[a,a,b,b,b,c,d,e,a]找出出现次数最多且排在最前的

@@ -32,3 +32,94 @@ protected static final ThreadLocal<Page> LOCAL_PAGE = new ThreadLocal<Page>();
     }
 ```
 
+逻辑分页
+
+
+
+物理分页
+
+PageInterceptor拦截器拦截query()查询方法
+
+分页的参数放在LocalThread里面
+
+
+
+### 过滤器(Filter)
+
+
+
+拦截器（Interceptor）
+
+> 使用反射机制实现的
+
+​	
+
+#### 反射机制
+
+##### jdk自带的InvocationHandler
+
+> 只能实现接口实现类的代理
+
+```java
+public interface Animal {
+    void eat();
+}
+```
+
+```java
+public class Cat implements Animal {
+    /**
+     * java 自带的动态代理 需要实现接口
+     */
+    @Override
+    public void eat() {
+        System.out.println("cat is eatting");
+    }
+}
+```
+
+> 自定义InvocationHandler的实现
+
+```java
+public class CatInvocationHandler implements InvocationHandler {
+    private Object object;
+
+    CatInvocationHandler(Object object) {
+        this.object = object;
+    }
+
+    public Object newProxyInstance() {
+        return Proxy.newProxyInstance(object.getClass().getClassLoader(), object.getClass().getInterfaces(), this);
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        System.out.println("调用eat()之前");
+        Object result =  method.invoke(object, args);
+        System.out.println("调用eat()之后");
+        return result;
+    }
+}
+```
+
+> 调用被动态代理的接口方法
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        Cat cat = new Cat();
+        CatInvocationHandler d = new CatInvocationHandler(cat);
+        Animal animal = (Animal) d.newProxyInstance();
+        animal.eat();
+    }
+}
+```
+
+> 结果:
+> 调用eat()之前
+> cat is eatting
+> 调用eat()之后
+
+##### cglib的MethodInterceptor
+
+> 可以对接口和类进行代理
