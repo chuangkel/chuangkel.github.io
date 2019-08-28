@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      spring注解
-subtitle:   @Autowired 和 @Resource的区别
+title:      java注解原理
+subtitle:   java注解原理
 date:       2019-07-30
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
@@ -10,8 +10,10 @@ tags:
     - spring
 ---
 
+# java注解原理
 
-#  spring注解
+## spring注解
+
 * @Autowired 和 @Resource的区别
     * 共同点：都可以作用于字段和方法
     * 不同点：
