@@ -7,7 +7,7 @@ author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
 tags:
-    - Synchronized原理解析
+    - java
 ---
 
 Synchronized原理解析
@@ -76,15 +76,15 @@ public static void main(java.lang.String[]);
 
 > 每个对象（包括class对象）都有一个监视器。监视器有三部分，比较形象的比喻，special room只能有一个线程持有，wait root是挂起线程的队列，等待队列在hallway。
 
-![1566178299653](C:\Users\hspcadmin\AppData\Roaming\Typora\typora-user-images\1566178299653.png)
+![1566178299653](/../img/1566178299653.png)
 
 > 在JAVA虚拟机中，每个对象(Object和class)通过某种逻辑关联监视器，为了实现监视器的互斥功能，每个对象(Object和class)都关联着一个监视器，对象可以有它自己的临界区，并且能够监视线程序列为了使线程协作，JAVA提供了wait()和notifyAll以及notify()实现挂起线程、唤醒另外一个等待的线程。
 
-![1566178354439](C:\Users\hspcadmin\AppData\Roaming\Typora\typora-user-images\1566178354439.png)
+![1566178354439](/../img/1566178354439.png)
 
 和下面的图一样的：
 
-![1566195759821](C:\Users\hspcadmin\AppData\Roaming\Typora\typora-user-images\1566195759821.png)
+![1566195759821](/../img/1566195759821.png)
 
 ### 对象头
 
@@ -115,10 +115,10 @@ public static void main(java.lang.String[]);
 
 偏向锁 -> 轻量级锁->偏向锁->重量级锁
 
-![img](..\img\偏向锁的撤销.png)
+![img](/../img/偏向锁的撤销.png)
 
 
 
 
 
-![img](..\img\轻量级锁.png)
+![img](/../img/轻量级锁.png)
