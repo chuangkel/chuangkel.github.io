@@ -10,11 +10,23 @@ tags:
     - java
 ---
 
-Synchronized原理解析
+# Synchronized原理解析
+
+> 临界区（Critical Section）、互斥量（Mutex）和信号量（Semaphore）都是主要的互斥实现方式。
+>
+> **Java的线程是映射到操作系统的原生线程之上的，如果要阻塞或唤醒一个线程，都需要操作系统来帮忙完成，这就需要从用户态转换到核心态中，因此状态转换需要耗费很多的处理器时间。** 对于代码简单的同步块（如被synchronized修饰的getter（）或setter（）方法），状态转换消耗的时间有可能比用户代码执行的时间还要长。
 
 
 
+### Synchronized和Lock联系和区别
 
+除了synchronized之外，我们还可以使用java.util.concurrent（下文称J.U.C）包中的重入锁 （ReentrantLock）来实现同步，在基本用法上，ReentrantLock与synchronized很相似，他们都 具备一样的线程重入特性，只是代码写法上有点区别，一个表现为API层面的互斥锁 （lock（）和unlock（）方法配合try/finally语句块来完成），另一个表现为原生语法层面的互斥锁。不过，相比synchronized,ReentrantLock增加了一些高级功能，主要有以下3项：等待可 中断、可实现公平锁，以及锁可以绑定多个条件。
+
+* 等待可中断是指当持有锁的线程长期不释放锁的时候，正在等待的线程可以选择放弃等 待，改为处理其他事情，可中断特性对处理执行时间非常长的同步块很有帮助。
+
+* 公平锁是指多个线程在等待同一个锁时，必须按照申请锁的时间顺序来依次获得锁；而 非公平锁则不保证这一点，在锁被释放时，任何一个等待锁的线程都有机会获得锁。 synchronized中的锁是非公平的，ReentrantLock默认情况下也是非公平的，但可以通过带布尔值的构造函数要求使用公平锁。 
+
+* 锁绑定多个条件是指一个ReentrantLock对象可以同时绑定多个Condition对象，而在 synchronized中，锁对象的wait（）和notify（）或notifyAll（）方法可以实现一个隐含的条 件，如果要和多于一个的条件关联的时候，就不得不额外地添加一个锁，而ReentrantLock则 无须这样做，只需要多次调用newCondition（）方法即可。 
 
 
 
