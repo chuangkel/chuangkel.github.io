@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:	zookeeper解析
-subtitle: 	zookeeper解析
+title:	zookeeper
+subtitle: 	zookeeper
 date:       2019-08-21
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
@@ -10,7 +10,7 @@ tags:
     - spring
 ---
 
-# zookeeper解析
+# zookeeper
 
 > 概述：Zookeeper是Hadoop的一个子项目，它是分布式系统中的协调系统，可提供的服务主要有：配置服务、名字服务、分布式同步、组服务等
 >
