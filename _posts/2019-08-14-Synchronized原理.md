@@ -22,6 +22,8 @@ Synchronized原理解析
 # 查看class执行的指令码
 javac x.java
 javap -c    x.class
+javap -l x.class
+javap -v x.class 
 ```
 
 ### 管程
