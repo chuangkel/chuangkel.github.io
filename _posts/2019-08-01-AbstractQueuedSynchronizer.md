@@ -12,6 +12,8 @@ tags:
 
 # AbstractQueuedSynchronizer同步器
 
+> Head是Node.thread == null的节点，并不属于同步器队列
+
 ### Condition
 
 > Condition是对象监视器的替代品，拓展了监视器的语义
@@ -276,4 +278,20 @@ static {
 * **unpark 过程**
   * 当unpark时，直接设置\_counter为1，再unlock mutex返回
     * 如果\_counter之前的值是0，则还要调用pthread_cond_signal唤醒在park中等待的线程：
+
+
+
+### 如何终止一个Java线程
+
+对于runnable的线程，利用一个变量做标记位，定期检查
+
+
+
+对于非runnable的线程，应该采取中断的方式退出阻塞，并处理捕获的中断异常
+
+- 对于大部分阻塞线程的方法，使用Thread.interrupt()，可以立刻退出等待，抛出InterruptedException
+    这些方法包括Object.wait(), Thread.join()，Thread.sleep()，以及各种AQS衍生类：
+  - Lock.lockInterruptibly()**等任何显示声明throws InterruptedException的方法**。
+  - 被阻塞的nio Channel也会响应interrupt()，抛出ClosedByInterruptException，相应nio通道需要实现java.nio.channels.InterruptibleChannel接口
+  - 还有一些阻塞方法不会响应interrupt，如等待进入synchronized段、Lock.lock()。他们不能被动的退出阻塞状态。
 
