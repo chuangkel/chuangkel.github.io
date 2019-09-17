@@ -213,7 +213,7 @@ private void enqueue(E x) {
 
 1. 队列的数据结构？
 
-   ArrayBlockedQueue和LinkedBlockedQueue的数据结构不同，前者使用数组后者使用链表。
+   ArrayBlockedQueue和LinkedBlockedQueue的数据结构不同，前者使用数组后者使用单向链表。
 
 2. 阻塞队列有哪些特性？
 
@@ -230,8 +230,6 @@ private void enqueue(E x) {
    若队列为空，notEmpty.await()方法会使获取元素的线程挂起并释放队列的锁，等待添加元素的线程会调用notEmpty.signal()方法将其唤醒。
 
    若队列已满，notFull.await()方法会使添加元素的线程挂起并释放当前持有的锁，之后获取元素的线程会调用notFull.signal()方法将其唤醒。
-
-   
 
    
 
