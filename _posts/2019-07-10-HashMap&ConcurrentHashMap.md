@@ -1,8 +1,8 @@
 ---
 layout:     post
-title:	当HashMap遇ConcurrentHashMap
-subtitle: 	当HashMap遇ConcurrentHashMap
-date:       2019-08-10
+title:	ConcurrentHashMap
+subtitle: 	ConcurrentHashMap
+date:       2019-07-10
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
@@ -10,7 +10,7 @@ tags:
     - java
 ---
 
-# 当HashMap遇ConcurrentHashMap
+# ConcurrentHashMap
 
 > 将hashCode无符号右移，即低位等于高位和低位异或运算，减少高位相同低位不同的hashCode导致hash碰撞（因为使用的是低位，减少hash碰撞）
 

@@ -1,8 +1,8 @@
 ---
 clayout:     post
-title:		同步队列
-subtitle: 	同步队列
-date:       2019-08-09
+title:		AbstractQueuedSynchronizer同步器
+subtitle: 	AbstractQueuedSynchronizer同步器
+date:       2019-08-01
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true

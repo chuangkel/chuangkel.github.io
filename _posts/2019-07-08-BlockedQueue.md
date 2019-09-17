@@ -2,7 +2,7 @@
 layout:     post
 title:	BlockingQueue
 subtitle: 	BlockingQueue
-date:       2019-08-10
+date:       2019-07-08
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
@@ -70,7 +70,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
 
 #### 入队操作
 
-> add本质是调用了offer的实现，若offer返回失败则抛异常
+> add本质是调用了offer的实现，若offer返回false则抛异常
 
 ```java
 public boolean add(E e) {
@@ -208,4 +208,3 @@ private void enqueue(E x) {
     notEmpty.signal(); //唤醒notEmpty 即出队操作
 }
 ```
-
