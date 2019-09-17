@@ -15,8 +15,8 @@ tags:
 ### 问题
 
 1. 队列的数据结构？
-2. 怎么实现多线程的添加元素和获取元素的？
-3. 相关方法详解和使用实例？
+2. 阻塞队列有哪些特性？
+3. 怎么实现多线程的添加元素和获取元素的？怎么实现阻塞队列的特性的 ？即等待获取等待添加。
 
 ### 接口方法
 
@@ -162,7 +162,7 @@ public void put(E e) throws InterruptedException {
     lock.lockInterruptibly();
     try {
         while (count == items.length) 
-            notFull.await(); //若队列已满，则等待有效空间出现
+            notFull.await(); //若队列已满，则等待有效空间出现,释放锁，同时挂起线程
         enqueue(e);
     } finally {
         lock.unlock();
@@ -184,7 +184,7 @@ public boolean offer(E e, long timeout, TimeUnit unit)
         while (count == items.length) {
             if (nanos <= 0)
                 return false;
-            nanos = notFull.awaitNanos(nanos); // 等待nonos时间
+            nanos = notFull.awaitNanos(nanos); // 等待nonos时间，同时释放锁挂起线程
         }
         enqueue(e); //入队 并唤醒出队操作 ，因为有元素可消费
         return true;
@@ -208,3 +208,31 @@ private void enqueue(E x) {
     notEmpty.signal(); //唤醒notEmpty 即出队操作
 }
 ```
+
+### 总结
+
+1. 队列的数据结构？
+
+   ArrayBlockedQueue和LinkedBlockedQueue的数据结构不同，前者使用数组后者使用链表。
+
+2. 阻塞队列有哪些特性？
+
+   若队列为空，可以阻塞获取元素的线程等到队列的元素有为止。
+
+   若队列已满，可以阻塞添加元素的线程等到队列的空间有效为止。
+
+3. 怎么实现多线程的添加元素和获取元素的？怎么实现阻塞队列的特性的 ？即等待获取等待添加。
+
+   所分析的ArrayBlockedQueue中，使用了一把锁和锁的两个条件变量（Condition)，使用锁来进行多线程下的队列的出队入队的同步操作。使用两个条件变量来进行出队入队的同步。**可以使用一个条件变量行吗？思考**
+
+   使用条件变量notFull和notEmpty来进行多线程间的通信协作。
+
+   若队列为空，notEmpty.await()方法会使获取元素的线程挂起并释放队列的锁，等待添加元素的线程会调用notEmpty.signal()方法将其唤醒。
+
+   若队列已满，notFull.await()方法会使添加元素的线程挂起并释放当前持有的锁，之后获取元素的线程会调用notFull.signal()方法将其唤醒。
+
+   
+
+   
+
+   
