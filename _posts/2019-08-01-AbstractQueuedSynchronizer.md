@@ -14,6 +14,12 @@ tags:
 
 > Head是Node.thread == null的节点，并不属于同步器队列
 
+### 问题
+
+1. 使用aqs实现自己的锁？
+
+
+
 ### Condition
 
 > Condition是对象监视器的替代品，拓展了监视器的语义
