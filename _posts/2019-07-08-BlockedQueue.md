@@ -12,6 +12,15 @@ tags:
 
 # BlockingQueue
 
+* ArrayBlockingQueue
+* LinkedBlockingQueue
+* PriorityBlockingQueue
+* LinkedTransferQueue
+* DelayQueue
+* DelayedWordQueue(线程池ThreadPoolExecutor定义)
+
+
+
 ### 问题
 
 1. 队列的数据结构？
@@ -44,7 +53,7 @@ public interface BlockingQueue<E> extends Queue<E> {
 }
 ```
 
-### ArrayBlockedQueue
+## ArrayBlockedQueue
 
 ```java
 public class ArrayBlockingQueue<E> extends AbstractQueue<E>
@@ -232,5 +241,12 @@ private void enqueue(E x) {
    若队列已满，notFull.await()方法会使添加元素的线程挂起并释放当前持有的锁，之后获取元素的线程会调用notFull.signal()方法将其唤醒。
 
    
-
    
+   
+   ## 线程池中应用的几种阻塞队列 
+   
+   LinkedBlockingQueue
+   
+   DelayedWorkQueue
+   
+   SynchronousQueue

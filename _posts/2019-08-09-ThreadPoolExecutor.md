@@ -25,21 +25,19 @@ tags:
 ### 数据结构
 
 ```java
+//任务阻塞队列，用来存放任务，在任务大于核心线程数情况下, 入队到阻塞队列中
 private final BlockingQueue<Runnable> workQueue;
+//加入Worker到线程池workers并发控制
 private final ReentrantLock mainLock = new ReentrantLock();
 /**
  * Set containing all worker threads in pool. Accessed only when
- * holding mainLock.
+ * holding mainLock. 线程池用来存放线程的集合
  */
 private final HashSet<Worker> workers = new HashSet<Worker>();
 /**
  * Wait condition to support awaitTermination
  */
 private final Condition termination = mainLock.newCondition();
-/**
- * Tracks largest attained pool size. Accessed only under
- * mainLock.
- */
 private int largestPoolSize;
 /**
  * Counter for completed tasks. Updated only on termination of
@@ -87,7 +85,6 @@ private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
 private static final int COUNT_BITS = Integer.SIZE - 3;
 //线程池容量存储在ctl低29位
 private static final int CAPACITY   = (1 << COUNT_BITS) - 1;
-
 // runState is stored in the high-order bits 线程运行状态存储在ctl高3位
 //11100000000000000000000000000000 高位111
 private static final int RUNNING    = -1 << COUNT_BITS;
@@ -101,7 +98,7 @@ private static final int TIDYING    =  2 << COUNT_BITS;
 private static final int TERMINATED =  3 << COUNT_BITS;
 ```
 
-
+> execute执行任务，会加入到队列里面吗？
 
 ```java
 public void execute(Runnable command) {
@@ -118,13 +115,13 @@ public void execute(Runnable command) {
     //线程池线程数量大于核心线程数，isRunning(c)判断线程池状态，if true，则添加到阻塞队列
     if (isRunning(c) && workQueue.offer(command)) {
         int recheck = ctl.get();
-       
+       //到了这里，线程池状态是RUNNING且核心线程数已满且插入到阻塞队列成功
         if (! isRunning(recheck) && remove(command))
-            //线程池不在运行 && 移除任务成功 按照拒绝策略处理
+            //线程池不在运行且移除任务成功 那么按照拒绝策略处理
             reject(command);
         else if (workerCountOf(recheck) == 0)
-            //1. 线程池在运行 运行线程数为0 2. 线程池不在运行，移除任务失败 运行线程数为0
-            addWorker(null, false);
+            //1. 线程池在运行且运行线程数为0 2. 线程池不在运行且移除任务失败(队列为空)且运行线程数为0
+            addWorker(null, false);// 为什么任务是null和false（不是核心）
     }
     //任务队列满了，直接运行，if 直接运行失败，按照拒绝策略处理
     else if (!addWorker(command, false))
@@ -132,7 +129,7 @@ public void execute(Runnable command) {
 }
 ```
 
-
+> addWorker是干什么的？ 直接运行任务
 
 ```java
 private boolean addWorker(Runnable firstTask, boolean core) {
@@ -140,29 +137,27 @@ private boolean addWorker(Runnable firstTask, boolean core) {
     for (;;) {
         int c = ctl.get();
         int rs = runStateOf(c);
-
-        // Check if queue empty only if necessary.
-        // 线程池不是Running 
+        // Check if queue empty only if necessary.    
         if (rs >= SHUTDOWN &&
             ! (rs == SHUTDOWN &&
                firstTask == null &&
                ! workQueue.isEmpty()))
             return false;
-
+// 到了这里，说明线程池状态是RUNNING 或者 线程池状态是SHUTDOWN且新加的任务是nul且任务队列不为空
         for (;;) {
             int wc = workerCountOf(c);
             if (wc >= CAPACITY ||
                 wc >= (core ? corePoolSize : maximumPoolSize))
                 return false;
             if (compareAndIncrementWorkerCount(c))
-                break retry;
+                break retry; //若新增运行线程数+1成功，则跳出retry循环
             c = ctl.get();  // Re-read ctl
-            if (runStateOf(c) != rs)
-                continue retry;
+            if (runStateOf(c) != rs) 
+                continue retry; //多线程并发添加任务了，重来一遍
             // else CAS failed due to workerCount change; retry inner loop
         }
     }
-
+//到了这里，新增ctl的线程数成功
     boolean workerStarted = false;
     boolean workerAdded = false;
     Worker w = null;
@@ -177,12 +172,12 @@ private boolean addWorker(Runnable firstTask, boolean core) {
                 // Back out on ThreadFactory failure or if
                 // shut down before lock acquired.
                 int rs = runStateOf(ctl.get());
-
+//线程池是RUNNING状态 或 线程池是SHUTDOWN且加入的任务为空
                 if (rs < SHUTDOWN ||
                     (rs == SHUTDOWN && firstTask == null)) {
                     if (t.isAlive()) // precheck that t is startable
                         throw new IllegalThreadStateException();
-                    workers.add(w);
+                    workers.add(w); //Worker加入到线程池
                     int s = workers.size();
                     if (s > largestPoolSize)
                         largestPoolSize = s;
@@ -192,7 +187,7 @@ private boolean addWorker(Runnable firstTask, boolean core) {
                 mainLock.unlock();
             }
             if (workerAdded) {
-                t.start();
+                t.start(); //启动线程
                 workerStarted = true;
             }
         }
@@ -204,56 +199,9 @@ private boolean addWorker(Runnable firstTask, boolean core) {
 }
 ```
 
+## Worker(线程+任务)分析
 
-
-```java
-private Runnable getTask() {
-    boolean timedOut = false; // Did the last poll() time out?
-
-    for (;;) {
-        int c = ctl.get();
-        int rs = runStateOf(c);
-		
-        // Check if queue empty only if necessary.
-        //rs >= SHUTDOWN不是运行状态 rs>=STOP不是RUNNING和SHUTDOWN状态，队列是空
-        if (rs >= SHUTDOWN && (rs >= STOP || workQueue.isEmpty())) {
-            decrementWorkerCount();
-            return null;
-        }
-
-        int wc = workerCountOf(c);
-
-        // Are workers subject to culling?
-        boolean timed = allowCoreThreadTimeOut || wc > corePoolSize;
-
-        if ((wc > maximumPoolSize || (timed && timedOut))
-            && (wc > 1 || workQueue.isEmpty())) {
-            if (compareAndDecrementWorkerCount(c))
-                return null;
-            continue;
-        }
-
-        try {
-            //poll等待keepAalived若队列中仍没有元素，返回
-            //take一直等待任务队列中元素有效
-            Runnable r = timed ?
-                workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
-                workQueue.take();
-            if (r != null)
-                return r;
-            timedOut = true;
-        } catch (InterruptedException retry) {
-            timedOut = false;
-        }
-    }
-}
-```
-
-
-
-### Worker分析
-
-worker数据结构
+### worker数据结构
 
 ```java
 private final class Worker
@@ -281,7 +229,48 @@ private final class Worker
     public boolean isLocked() { return isHeldExclusively(); }
 ```
 
-#### 调用的类外方法
+> getTask是干什么的？ 从阻塞任务队列获取任务，若队列为空，则阻塞当前线程。
+
+```java
+private Runnable getTask() {
+    boolean timedOut = false; // Did the last poll() time out?
+    for (;;) {
+        int c = ctl.get();
+        int rs = runStateOf(c);
+        // Check if queue empty only if necessary.
+        //rs >= SHUTDOWN不是运行状态 rs>=STOP不是RUNNING和SHUTDOWN状态，队列是空
+        if (rs >= SHUTDOWN && (rs >= STOP || workQueue.isEmpty())) {
+            decrementWorkerCount();
+            return null;
+        }
+        int wc = workerCountOf(c);
+        // Are workers subject to culling?
+        boolean timed = allowCoreThreadTimeOut || wc > corePoolSize;
+        if ((wc > maximumPoolSize || (timed && timedOut))
+            && (wc > 1 || workQueue.isEmpty())) {
+            if (compareAndDecrementWorkerCount(c))
+                return null;
+            continue;
+        }
+        try {
+            //poll等待keepAalived若队列中仍没有元素，返回
+            //take一直等待任务队列中元素有效
+            Runnable r = timed ?
+                workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
+                workQueue.take();
+            if (r != null)
+                return r;
+            timedOut = true;
+        } catch (InterruptedException retry) {
+            timedOut = false;
+        }
+    }
+}
+```
+
+### 调用的类外(Worker类之外)方法
+
+> 怎么样让线程一直运行的？怎样复用线程的？即通过运行阻塞队列的任务，若阻塞队列为空，则阻塞当前线程。
 
 ```java
 final void runWorker(Worker w) {
@@ -328,5 +317,89 @@ final void runWorker(Worker w) {
     } finally {
         processWorkerExit(w, completedAbruptly);
     }
+}
+```
+
+## 用阿里规范创建线程池
+
+### 问题
+
+1. 核心线程数量怎么确定？
+
+> 自定义线程工厂（参考jdk实现）
+
+```java
+static class DefaultThreadFactory implements ThreadFactory {
+    private static final AtomicInteger poolNumber = new AtomicInteger(1);
+    private final ThreadGroup group;
+    private final AtomicInteger threadNumber = new AtomicInteger(1);
+    private final String namePrefix;
+
+    DefaultThreadFactory() {
+        SecurityManager s = System.getSecurityManager();
+        group = (s != null) ? s.getThreadGroup() :
+                              Thread.currentThread().getThreadGroup();
+        namePrefix = "pool-" +
+                      poolNumber.getAndIncrement() +
+                     "-thread-";
+    }
+
+    public Thread newThread(Runnable r) {
+        Thread t = new Thread(group, r,
+                              namePrefix + threadNumber.getAndIncrement(),
+                              0);
+        if (t.isDaemon())
+            t.setDaemon(false);
+        if (t.getPriority() != Thread.NORM_PRIORITY)
+            t.setPriority(Thread.NORM_PRIORITY);
+        return t;
+    }
+}
+```
+
+
+
+## Executors创建线程池（不推荐）
+
+> newCachedThreadPool
+
+```java
+public static ExecutorService newCachedThreadPool(ThreadFactory threadFactory) {
+    return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                                  60L, TimeUnit.SECONDS,
+                                  new SynchronousQueue<Runnable>(),
+                                  threadFactory);
+}
+```
+
+> newFixedThreadPool
+
+```java
+public static ExecutorService newFixedThreadPool(int nThreads, ThreadFactory threadFactory) {
+    return new ThreadPoolExecutor(nThreads, nThreads,
+                                  0L, TimeUnit.MILLISECONDS,
+                                  new LinkedBlockingQueue<Runnable>(),
+                                  threadFactory);
+}
+```
+
+> newScheduledThreadPool
+
+```java
+public static ScheduledExecutorService newScheduledThreadPool(
+        int corePoolSize, ThreadFactory threadFactory) {
+    return new ScheduledThreadPoolExecutor(corePoolSize, threadFactory);
+}
+```
+
+> newSingleThreadExecutor，为什么不用当个线程代替只有一个线程的线程池？
+
+```java
+public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactory) {
+    return new FinalizableDelegatedExecutorService
+        (new ThreadPoolExecutor(1, 1,
+                                0L, TimeUnit.MILLISECONDS,
+                                new LinkedBlockingQueue<Runnable>(),
+                                threadFactory));
 }
 ```
