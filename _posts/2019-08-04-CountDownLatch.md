@@ -12,97 +12,48 @@ tags:
 
 # CountDownLatch
 
+> CountDownLathch使用场景：比如主线程启动子线程之后，需等待子线程都执行完，那么就需在主线程调用await()，每个子线程执行完成任务之后执行countDown()，待锁state减到0的子线程会唤醒主线程。如此便实现了主线程与子线程的协作工作。当然不一定主线程等待，任何线程都可以作为等待线程。而countDown()的线程并没被阻塞，countDown()底层实现是sync.releaseShared(1)。
+
+## 示例
+
+> 一个线程A等待多线程执行完成的同步，等待指定数量的线程运行了countDownLatch.countDown()把state减到0 ，则挂起的A线程才能进入就绪状态，继续执行。因为执行await()线程要等待锁state减到0，并不一定是等待执行countDown()的线程执行完，只需state减到0的线程唤醒所有线程，除非当前线程发生中断。
+
 ```java
-private void doAcquireShared(int arg) {
-    final Node node = addWaiter(Node.SHARED);
-    boolean failed = true;
+public static void main(String[] args) {
+    CountDownLatch countDownLatch = new CountDownLatch(6);
+    ExecutorService pool = Executors.newCachedThreadPool();
+    for (int i = 0; i < 5; i++) {
+        pool.submit(new CountDownLatchTest(countDownLatch, String.valueOf(i)));
+    }
     try {
-        boolean interrupted = false;
-        for (;;) {
-            final Node p = node.predecessor();
-            if (p == head) {
-                int r = tryAcquireShared(arg);
-                if (r >= 0) {
-                    setHeadAndPropagate(node, r);
-                    p.next = null; // help GC
-                    if (interrupted)
-                        selfInterrupt();
-                    failed = false;
-                    return;
-                }
-            }	//设置node前节点为需要唤醒后节点，即Node.SIGNAL
-            if (shouldParkAfterFailedAcquire(p, node) && 
-                parkAndCheckInterrupt()) //阻塞线程
-                interrupted = true;
-        }
+        countDownLatch.await(); // 1.若latch count 为0 则 继续执行；2.若不为0 则挂起当前线程；3.某个减少latch count到0的线程唤醒它。
+        System.out.println("await()线程,任务汇总之后...");
+    } catch (InterruptedException e) {
+        e.printStackTrace();
     } finally {
-        if (failed)
-            cancelAcquire(node);
+        pool.shutdown();
+    }
+}
+
+static class CountDownLatchTest implements Runnable {
+    CountDownLatch countDownLatch;
+    String i;
+    CountDownLatchTest(CountDownLatch countDownLatch, String i) {
+        this.countDownLatch = countDownLatch;
+        this.i = i;
+    }
+    @Override
+    public void run() {
+        System.out.println("hello->" + i);
+        countDownLatch.countDown();
+        System.out.println("sleep 3000ms");
     }
 }
 ```
 
 
 
-```java
-private Node addWaiter(Node mode) {
-    Node node = new Node(Thread.currentThread(), mode);//当前线程新建节点，加入等待队列
-    // Try the fast path of enq; backup to full enq on failure
-    Node pred = tail;//pre指向最后一个节点
-    if (pred != null) {//队列不为空
-        node.prev = pred;//设置node在链表中的pre
-        if (compareAndSetTail(pred, node)) {//cas设置tail,pred是预期值，node是更新值
-            pred.next = node;
-            return node;
-        }
-    }
-    enq(node);//如果队列为null，或者compareAndSetTail(pred, node)失败
-    return node;
-}
-```
-
-
-
-```java
-private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
-    int ws = pred.waitStatus;
-    if (ws == Node.SIGNAL)//-1 需要唤醒后面节点
-        /*
-         * This node has already set status asking a release
-         * to signal it, so it can safely park.
-         */
-        return true;
-    if (ws > 0) {//1,取消了等待
-        /*
-         * Predecessor was cancelled. Skip over predecessors and
-         * indicate retry.
-         */
-        do {
-            node.prev = pred = pred.prev;
-        } while (pred.waitStatus > 0);
-        pred.next = node;
-    } else {// 0,-2，一般都是0，将前节点设置成需唤醒后节点
-        /*
-         * waitStatus must be 0 or PROPAGATE.  Indicate that we
-         * need a signal, but don't park yet.  Caller will need to
-         * retry to make sure it cannot acquire before parking.
-         */
-        compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
-    }
-    return false;
-}
-```
-
-
-
-```java
-private final boolean parkAndCheckInterrupt() {
-    LockSupport.park(this);//阻塞当前线程
-    return Thread.interrupted(); //返回中断标识，并清除中断标识为false
-}
-```
-
-
+## 源码分析
 
 1. CountDownLatch有什么特性，使用的场景有哪些？
 
@@ -116,12 +67,12 @@ private final boolean parkAndCheckInterrupt() {
 
 3. 怎么实现多线程等待的？
 
-   > new CountDownLatch(n)传入了n，当n减到0的线程唤醒其他线程。穿入的n是AQS同步器的锁变量state，当state减到0时，唤醒其他线程。
-
-   
+   > new CountDownLatch(n)传入了n，当n减到0的线程唤醒其他线程。传入的n是AQS同步器的锁变量state，当state减到0时，唤醒其他线程，由减到0的线程唤醒被await()阻塞的线程。
 
 
 ### await()方法
+
+> CountDownLatch.await()调用的是共享模式的可中断获取锁
 
 ```java
 public void await() throws InterruptedException {
@@ -185,6 +136,8 @@ private void doAcquireSharedInterruptibly(int arg)
 
 ### countDown()方法
 
+> 释放共享模式的锁
+
 ```java
 public void countDown() {
     sync.releaseShared(1);
@@ -204,7 +157,7 @@ public final boolean releaseShared(int arg) {
 }
 ```
 
-> CountDownLatch自身实现的tryReleaseShared方法，如果锁state减为0了，直接返回false。如果锁state不为0，则减一，同时返回 state == 0。
+> CountDownLatch自身实现的tryReleaseShared方法，如果锁state减为0了，直接返回false。如果锁state不为0，则减一，同时返回 state == 0 的判断。
 
 ```java
 protected boolean tryReleaseShared(int releases) {
@@ -220,7 +173,7 @@ protected boolean tryReleaseShared(int releases) {
 }
 ```
 
-> 调用了父类AQS同步器的方法
+> 调用了父类AQS同步器的方法，在锁state减为0时调用了如下的方法，唤醒被CountDownLatch.await()阻塞的线程。
 
 ```java
 private void doReleaseShared() {
@@ -242,7 +195,7 @@ private void doReleaseShared() {
             if (ws == Node.SIGNAL) {
                 if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
                     continue;            // loop to recheck cases
-                unparkSuccessor(h);
+                unparkSuccessor(h); //唤醒后继者
             }
             else if (ws == 0 &&
                      !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))

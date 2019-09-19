@@ -170,3 +170,11 @@ final boolean nonfairTryAcquire(int acquires) {
     return false;
 }
 ```
+
+
+
+## 读写锁的实践
+
+> 读阻塞写，不阻塞其他读
+>
+> 写阻塞读，又阻塞其他写

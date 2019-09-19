@@ -26,7 +26,300 @@ tags:
 
 5. 使用aqs实现自己的锁？
 
-   
+6. 什么时候唤醒后继者呢？
+
+    
+
+
+### 同步队列
+
+> 同步队列以链表方式，具有共享模式和独占模式
+>
+> sync队列和condition队列
+
+```java
+static final class Node {
+    //用同一个对象 来标识线程获取的锁是共享的，在已占用的情况下，其他线程的共享模式可以进入锁
+    static final Node SHARED = new Node();
+    static final Node EXCLUSIVE = null; //标识该节点的线程获取的锁是独占的
+    static final int CANCELLED =  1; //标识当前节点的线程已取消
+    static final int SIGNAL    = -1;//唤醒下一个节点，什么时候唤醒呢？
+    static final int CONDITION = -2;//正在等待什么条件？
+    static final int PROPAGATE = -3;//标识在共享模式下面需要传播，怎么传播？
+    volatile int waitStatus;//取值 CANCELLED、SIGNAL、CONDITION、PROPAGATE
+    volatile Node prev;//同步队列中元素的上一个节点
+    volatile Node next;//同步队列中元素的下一个节点
+    volatile Thread thread; //入队列时的当前线程
+    Node nextWaiter; //标识当前节点的模式
+    Node(Thread thread, Node mode) {     // Used by addWaiter
+        this.nextWaiter = mode; //标识当前节点的模式
+        this.thread = thread;
+    }
+}
+```
+
+#### waitStatus属性表
+
+| waitStatus    | 含义                                                         |
+| ------------- | ------------------------------------------------------------ |
+| SIGNAL(-1)    | 当前节点线程的继任者处于被阻塞状态，当前线程在释放或取消时，必须unpark（启动）它的继任者。 |
+| CANCELLED(1)  | 当前节点线程因为中断或者超时，被标识为CANCELLED。            |
+| CONDITION(-2) | 当前节点线程处于condition队列中。nextWaiter存储condition队列中的后继节点 |
+| PROPAGATE(-3) | 当前节点线程把共享消息传递给其他节点。                       |
+| 0             | 当前节点线程处于sync队列中。                                 |
+
+
+
+AQS共享模式和独占模式有什么区别
+
+共享模式实现了多线程并发读，阻塞写，读线程释放锁之后才能读
+
+独占模式实现了写线程阻塞读写线程
+
+## 方法汇总
+
+### 供Lock接口调用（代理）的方法
+
+| 方法                                           | 说明                         | 调用者/使用者                                     |
+| ---------------------------------------------- | ---------------------------- | ------------------------------------------------- |
+| final void acquire(int arg)                    | 独占模式下获取锁，忽略中断   |                                                   |
+| final boolean release(int arg)                 | 独占模式下释放锁             |                                                   |
+| final void acquireInterruptibly(int arg)       | 独占模式下获取锁，可响应中断 |                                                   |
+| final void acquireSharedInterruptibly(int arg) | 共享模式下获取锁，可响应中断 |                                                   |
+| final void acquireShared(int arg)              | 共享模式下获取锁，忽略中断   | TwinsLock、Semaphore、ReentrantReadWrite.ReadLock |
+| final boolean releaseShared(int arg)           | 共享模式下释放锁             |                                                   |
+
+### 需子类实现的方法
+
+> 子类实现AQS同步器过程中需调用getState()、setState(int newState)和compareAndSetState(int expect, int update)来操作锁状态
+
+| 方法                                        | 说明                                               |
+| ------------------------------------------- | -------------------------------------------------- |
+| protected boolean tryAcquire(int arg)       | 在独占模式下尝试获取锁，会操纵锁状态来实现获取逻辑 |
+| protected boolean tryRelease(int arg)       | 在独占模式下释放锁，会操纵锁状态                   |
+| protected int tryAcquireShared(int arg)     | 在共享模式下尝试获取锁                             |
+| protected boolean tryReleaseShared(int arg) | 在共享模式下释放锁                                 |
+| protected final boolean isHeldExclusively() | 在独占模式下，查询当前线程是否持有锁               |
+
+## 独占模式和共享模式的区别
+
+* 获取锁
+  * 共享模式
+  * 独占模式
+
+* 释放锁
+	* 共享模式：doReleaseShared()
+	* 独占模式：release()
+* 都调用了如下的代码
+
+## 代码分析
+
+
+> 在共享模式获取锁。获取锁的操作都是需要入同步队列操作的，之后若能获取锁则获取，不能则挂起线程。
+
+```java
+private void doAcquireShared(int arg) {
+    // 共享模式都是同一个对象Node.SHARED（静态类里面定义的），加入到同步队列。
+    final Node node = addWaiter(Node.SHARED); 
+    boolean failed = true;
+    try {
+        boolean interrupted = false;
+        for (;;) {
+            final Node p = node.predecessor(); //刚入同步队列节点的前一个节点
+            if (p == head) {
+                //如果前一个节点是头结点
+                int r = tryAcquireShared(arg); //该类由子类实现，判断锁state是否==0
+                 //参考： 若 r >= 0 则state == 0, 若 r < 0 则锁state>0。每个子类实现不同
+                if (r >= 0) {
+                    //到了这里，锁空闲，可以获取
+                    setHeadAndPropagate(node, r);
+                    p.next = null; // help GC
+                    if (interrupted) 
+                        selfInterrupt();
+                    failed = false;
+                    return;
+                }
+            }
+            if (shouldParkAfterFailedAcquire(p, node) &&
+                parkAndCheckInterrupt())
+                interrupted = true;
+        }
+    } finally {
+        if (failed)
+            cancelAcquire(node);
+    }
+}
+```
+
+> 根据给的模式(独占模式和共享模式) 创建节点和入队节点
+
+```java
+/** 
+ * Creates and enqueues node for current thread and given mode.
+ * @param mode Node.EXCLUSIVE for exclusive, Node.SHARED for shared
+ * @return the new node
+ */
+private Node addWaiter(Node mode) {
+    //mode: 共享模式下是Node.SHARED 独占模式下是Node.EXCLUSIVE即null
+    Node node = new Node(Thread.currentThread(), mode);
+    // Try the fast path of enq; backup to full enq on failure
+    Node pred = tail;
+    if (pred != null) {
+        node.prev = pred;
+        if (compareAndSetTail(pred, node)) { //cas设置tail,pred是预期值，node是更新值
+            pred.next = node;
+            return node;
+        }
+    }
+    //到了这里 队列为空 或者 加入到同步队列并发失败
+    enq(node);
+    return node;
+}
+```
+> 设置当前node为head，即获取到了锁了。 这个地方有并发吗？有并发但并不影响，相当于设置头结点，
+
+```java
+private void setHeadAndPropagate(Node node, int propagate) {
+    //node 是获取锁新建的节点，propagate是否可以获取锁 progagate >= 0 可以获取锁
+    Node h = head; // Record old head for check below
+    setHead(node);
+    /*
+     * Try to signal next queued node if:
+     *   Propagation was indicated by caller,
+     *     or was recorded (as h.waitStatus either before
+     *     or after setHead) by a previous operation
+     *     (note: this uses sign-check of waitStatus because
+     *      PROPAGATE status may transition to SIGNAL.)
+     * and
+     *   The next node is waiting in shared mode,
+     *     or we don't know, because it appears null
+     * The conservatism in both of these checks may cause
+     * unnecessary wake-ups, but only when there are multiple
+     * racing acquires/releases, so most need signals now or soon
+     * anyway.
+     */
+    //propagate什么时候大于0呢 h.waitStatus < 0线程不是取消状态。
+    if (propagate > 0 || h == null || h.waitStatus < 0 ||
+        (h = head) == null || h.waitStatus < 0) {
+        Node s = node.next;
+        //到了这里 当前节点是共享模式吗？
+        if (s == null || s.isShared()) // node的下一个节点不为空且是共享模式
+            doReleaseShared(); //释放共享
+    }
+}
+```
+> 释放共享模式的操作
+
+```java
+private void doReleaseShared() {
+    for (;;) {
+        Node h = head;
+        if (h != null && h != tail) {
+            int ws = h.waitStatus;
+            if (ws == Node.SIGNAL) {
+                if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                    continue;            // loop to recheck cases
+                unparkSuccessor(h); //唤醒一个后继者
+            }
+            // loop on failed CAS 为什么把head的waitStatus置为了-3 PROPAGATE
+            else if (ws == 0 &&
+                     !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                continue;                
+        }
+        // loop if head changed 什么情况下head会改变呢？
+        if (h == head)                   
+            break;
+    }
+}
+```
+> 唤醒node的后继者，不是唤醒node。
+
+```java
+private void unparkSuccessor(Node node) {
+    int ws = node.waitStatus;
+    if (ws < 0)
+        compareAndSetWaitStatus(node, ws, 0);
+    Node s = node.next;
+    // 到了这里，当前node的waitStatus有两种 1. 0 2. 1当前节点线程已取消
+    if (s == null || s.waitStatus > 0) {
+        //当前节点node是最后一个节点 或 其线程已取消等待
+        s = null;
+        //遍历 去掉已取消等待的节点 
+        for (Node t = tail; t != null && t != node; t = t.prev)
+            if (t.waitStatus <= 0)
+                s = t;
+    }
+    //以上：1. 找到node的后继节点中第一个不是取消的节点 2. 把当前node的waitStatus置为0
+    if (s != null)
+        LockSupport.unpark(s.thread);
+}
+```
+
+```java
+private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
+    int ws = pred.waitStatus;
+    if (ws == Node.SIGNAL)//-1 需要唤醒后面节点
+        /*
+         * This node has already set status asking a release
+         * to signal it, so it can safely park.
+         */
+        return true;
+    if (ws > 0) {//1,取消了等待
+        /*
+         * Predecessor was cancelled. Skip over predecessors and
+         * indicate retry.
+         */
+        do {
+            node.prev = pred = pred.prev;
+        } while (pred.waitStatus > 0);
+        pred.next = node;
+    } else {// 0,-2，一般都是0，将前节点设置成需唤醒后节点
+        /*
+         * waitStatus must be 0 or PROPAGATE.  Indicate that we
+         * need a signal, but don't park yet.  Caller will need to
+         * retry to make sure it cannot acquire before parking.
+         */
+        compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
+    }
+    return false;
+}
+```
+
+> 挂起线程
+
+```java
+private final boolean parkAndCheckInterrupt() {
+    LockSupport.park(this);//阻塞当前线程
+    return Thread.interrupted(); //返回中断标识，并清除中断标识为false
+}
+```
+
+## 独占模式
+
+> 释放独占模式的操作
+
+```java
+public final boolean release(int arg) {
+    if (tryRelease(arg)) {
+        Node h = head;
+        if (h != null && h.waitStatus != 0)
+            unparkSuccessor(h);
+        return true;
+    }
+    return false;
+}
+```
+
+
+## 共享模式
+
+
+
+## 子类需实现的方法
+
+* int tryAcquireShared(int arg) 用共享模式获取锁，
+
+
 
 ## Condition
 
@@ -125,49 +418,6 @@ public ArrayBlockingQueue(int capacity, boolean fair) {
     - Condition对象: 多个。通过多次调用lock.newCondition()返回多个等待队列
 
 
-### 同步队列
-
-> 同步队列以链表方式，具有共享模式和独占模式
->
-> sync队列和condition队列
-
-```java
-static final class Node {
-    static final Node SHARED = new Node();
-    static final Node EXCLUSIVE = null;
-    static final int CANCELLED =  1;
-    static final int SIGNAL    = -1;
-    static final int CONDITION = -2;//正在等待什么条件？
-    static final int PROPAGATE = -3;//标识在共享模式下面需要传播，怎么传播？
-    volatile int waitStatus;//取值 CANCELLED、SIGNAL、CONDITION、PROPAGATE
-    volatile Node prev;
-    volatile Node next;
-    volatile Thread thread; //入队列时的当前线程
-    Node nextWaiter;
-}
-```
-
-#### waitStatus属性表
-
-| waitStatus    | 含义                                                         |
-| ------------- | ------------------------------------------------------------ |
-| SIGNAL(-1)    | 当前节点线程的继任者处于被阻塞状态，当前线程在释放或取消时，必须unpark（启动）它的继任者。 |
-| CANCELLED(1)  | 当前节点线程因为中断或者超时，被标识为CANCELLED。            |
-| CONDITION(-2) | 当前节点线程处于condition队列中。nextWaiter存储condition队列中的后继节点 |
-| PROPAGATE(-3) | 当前节点线程把共享消息传递给其他节点。                       |
-| 0             | 当前节点线程处于sync队列中。                                 |
-
-
-
-AQS共享模式和独占模式有什么区别
-
-共享模式实现了多线程并发读，阻塞写，读线程释放锁之后才能读
-
-独占模式实现了写线程阻塞读写线程
-
-
-
-
 
 ### 扩展：
 
@@ -219,8 +469,6 @@ static {
 ### 如何终止一个Java线程
 
 对于runnable的线程，利用一个变量做标记位，定期检查
-
-
 
 对于非runnable的线程，应该采取中断的方式退出阻塞，并处理捕获的中断异常
 
