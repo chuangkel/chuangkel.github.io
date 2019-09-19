@@ -57,7 +57,7 @@ static class CountDownLatchTest implements Runnable {
 
 1. CountDownLatch有什么特性，使用的场景有哪些？
 
-   > 可以在一个线程中等待其他线程，然后同时唤醒其他线程。即在各自任务中的某个点停住，等待所有线程都就位之后，由最后一个到位的线程唤醒其他线程。
+   > 可以在一个线程中等待其他线程，然后其他线程中把state减到0的线程唤醒等待的线程。即在各自任务中的某个点停住，等待所有线程都就位之后，由最后一个到位的线程唤醒其他线程。
 
 2. CountDownLatch的方法？
 
@@ -65,9 +65,9 @@ static class CountDownLatchTest implements Runnable {
    >
    > * await()
 
-3. 怎么实现多线程等待的？
+3. 怎么实现主控线程（调用await()的线程）等待其他线程（调用countDown()方法的线程）的？
 
-   > new CountDownLatch(n)传入了n，当n减到0的线程唤醒其他线程。传入的n是AQS同步器的锁变量state，当state减到0时，唤醒其他线程，由减到0的线程唤醒被await()阻塞的线程。
+   > new CountDownLatch(n)传入了n，当n减到0的线程唤醒被await()的线程。传入的n是AQS同步器的锁变量state，当state减到0时，唤醒主线程（调用await()方法挂起的线程）。由减到0的线程唤醒被await()阻塞的线程。
 
 
 ### await()方法
@@ -206,3 +206,14 @@ private void doReleaseShared() {
     }
 }
 ```
+
+
+
+## CountDownLatch 和 Thread.join()方法的区别
+
+
+
+## CountDownLatch 和 CyclicBarrier的区别
+
+
+
