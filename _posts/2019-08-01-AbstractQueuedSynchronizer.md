@@ -18,6 +18,24 @@ tags:
 
 1. 同步器是什么，使用场景有哪些？
 
+   ```
+   Provides a framework for implementing blocking locks and related
+   * synchronizers (semaphores, events, etc) that rely on
+   * first-in-first-out (FIFO) wait queues.  This class is designed to
+   * be a useful basis for most kinds of synchronizers that rely on a
+   * single atomic {@code int} value to represent state. Subclasses
+   * must define the protected methods that change this state, and which
+   * define what that state means in terms of this object being acquired
+   * or released.  Given these, the other methods in this class carry
+   * out all queuing and blocking mechanics. Subclasses can maintain
+   * other state fields, but only the atomically updated {@code int}
+   * value manipulated using methods {@link #getState}, {@link
+   * #setState} and {@link #compareAndSetState} is tracked with respect
+   * to synchronization.
+   ```
+
+   > AQS同步器是一个框架，为了实现阻塞锁和与阻塞锁关联的同步器（synchronizer），比如共享信号量（semaphores）等，它们依赖于一个先进先出的等待队列。AQS同步器作为大多数同步器的基类。
+
 2. 同步器的数据结构？
 
 3. 同步器中的ConditionObject类解析。
@@ -28,7 +46,7 @@ tags:
 
 6. 什么时候唤醒后继者呢？
 
-    
+     
 
 
 ### 同步队列
