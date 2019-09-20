@@ -93,7 +93,7 @@ public final void acquireSharedInterruptibly(int arg)
 }
 ```
 
-> 若锁state为0，则进入if内部，执行doAcquireSharedInterruptibly(arg)方法
+> 若锁state大于0，则进入if内部，执行doAcquireSharedInterruptibly(arg)方法
 
 ```java
 protected int tryAcquireShared(int acquires) {
@@ -101,7 +101,7 @@ protected int tryAcquireShared(int acquires) {
 }
 ```
 
-> 如果锁state变成了0，则调用父类AQS同步器中的doAcquireSharedInterruptibly代码，该代码实现了什么呢？
+> 若锁state大于0，则调用父类AQS同步器中的doAcquireSharedInterruptibly代码，该代码实现了什么呢？
 
 ```java
 private void doAcquireSharedInterruptibly(int arg)
