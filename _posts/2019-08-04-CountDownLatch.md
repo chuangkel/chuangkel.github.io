@@ -13,6 +13,8 @@ tags:
 # CountDownLatch
 
 > CountDownLathch使用场景：比如主线程启动子线程之后，需等待子线程都执行完，那么就需在主线程调用await()，每个子线程执行完成任务之后执行countDown()，待锁state减到0的子线程会唤醒主线程。如此便实现了主线程与子线程的协作工作。当然不一定主线程等待，任何线程都可以作为等待线程。而countDown()的线程并没被阻塞，countDown()底层实现是sync.releaseShared(1)。
+>
+> **存在多个线程调用CountDownLatch.await()的场景**
 
 ## 示例
 
@@ -72,7 +74,7 @@ static class CountDownLatchTest implements Runnable {
 
 ### await()方法
 
-> CountDownLatch.await()调用的是共享模式的可中断获取锁
+> CountDownLatch.await()调用的是共享模式的可中断获取锁，存在多个线程调用CountDownLatch.await()的场景
 
 ```java
 public void await() throws InterruptedException {
