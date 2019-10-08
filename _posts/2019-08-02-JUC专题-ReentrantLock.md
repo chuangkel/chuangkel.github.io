@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:	ReentrantLock
+title:	JUC专题
 subtitle: 	ReentrantLock
 date:       2019-08-02
 author:     chuangkel

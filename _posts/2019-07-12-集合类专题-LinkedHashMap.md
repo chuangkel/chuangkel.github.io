@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:	LinkedHashMap
+title:	集合类专题
 subtitle: 	LinkedHashMap
 date:       2019-07-12
 author:     chuangkel

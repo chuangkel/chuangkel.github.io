@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:	BlockingQueue
+title:	集合类专题
 subtitle: 	BlockingQueue
 date:       2019-07-08
 author:     chuangkel

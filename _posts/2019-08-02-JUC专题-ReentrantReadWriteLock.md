@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:	ReentrantReadWriteLock
+title:	JUC专题
 subtitle: 	ReentrantReadWriteLock
 date:       2019-08-04
 author:     chuangkel

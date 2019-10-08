@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:	CyclicBarrier
+title:	JUC专题
 subtitle: 	CyclicBarrier
 date:       2019-08-02
 author:     chuangkel

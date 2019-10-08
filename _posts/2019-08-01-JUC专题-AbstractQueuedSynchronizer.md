@@ -1,6 +1,6 @@
 ---
 clayout:     post
-title:		AbstractQueuedSynchronizer同步器
+title:		JUC专题
 subtitle: 	AbstractQueuedSynchronizer同步器
 date:       2019-08-01
 author:     chuangkel
