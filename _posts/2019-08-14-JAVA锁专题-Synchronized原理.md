@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:	Synchronized原理解析
+title:	JAVA锁专题
 subtitle: 	Synchronized原理解析
 date:       2019-08-14
 author:     chuangkel
