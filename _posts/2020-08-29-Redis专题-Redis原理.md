@@ -1,8 +1,8 @@
 ---
 layout:     post
-title:	redis
+title:	Redis专题
 subtitle: 	redis
-date:       2019-08-30
+date:       2020-08-29
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
@@ -11,6 +11,16 @@ tags:
 ---
 
 # redis
+
+##  LRU、LFU 和 FIFO 缓存策略
+
+
+
+|              | Ehcache                                                      | Redis                                                        |
+| ------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 存取速度     | Ehcache直接在jvm虚拟机中缓存，速度快，效率高                 | Redis是通过socket访问到缓存服务，效率比ecache低              |
+| 集群和分布式 | Ehcache有缓存共享方案，不过是通过RMI或者Jgroup多播方式进行广播缓存通知更新，缓存共享复杂，维护不方便；简单的共享可以，但是涉及到缓存恢复，大数据缓存，则不合适。 | Redis有成熟的分布式解决方案。适合大规模分布式集群部署。      |
+| 操作复杂度   | Ehcache提供的接口非常简单明了，从Ehcache的搭建到运用运行仅仅需要的是你宝贵的几分钟。其实很多开发者都不知道自己用在用Ehcache，Ehcache被广泛的运用于其他的开源项目。比如：Hibernate | 至少需要安装服务端和客户端才能使用。操作略比Ehcache复杂一些。 |
 
 Redis 集群（Redis Cluster）中内置了 16384（2^14次方）个哈希槽(hash slot)，一个哈希槽中会有很多key和value键值对，当需要在 Redis 集群中放置一个 key-value时，redis 先对 key 使用 crc16校验算法算出一个结果，然后把结果对 16384 求余数（取模），这样每个 key 都会对应一个编号在 0-16383 之间的哈希槽。redis 会根据节点数量大致均等的将哈希槽映射到不同的节点，集群的每个节点负责一部分hash槽。（取模后是怎么找到对应的节点的？动态增删节点的时候，怎么做到不丢失数据的？redis集群怎么实现数据共享？）
 

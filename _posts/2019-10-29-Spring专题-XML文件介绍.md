@@ -1,8 +1,8 @@
 ---
 layout:     post
-title:xml文件介绍
-subtitle:   xml文件介绍
-date:       2019-08-07
+title:		Spring专题
+subtitle:   XML文件介绍
+date:       2019-10-29
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
@@ -10,7 +10,7 @@ tags:
     - spring
 ---
 
-#  xml文件介绍
+#  XML文件介绍
 
 * xmlns 默认命名空间
 * xmlns:xsi 带前缀xsi的命名空间，业界默认。 

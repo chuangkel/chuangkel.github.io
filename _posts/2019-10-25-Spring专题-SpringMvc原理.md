@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:	springMvc原理
+title:	Spring专题
 subtitle: 	springMvc原理
 date:       2019-08-25
 author:     chuangkel
@@ -10,7 +10,7 @@ tags:
     - spring
 ---
 
-# springMvc原理
+# SpringMvc原理
 
 > Interface to be implemented by objects that define a mapping between requests and handler objects
 >

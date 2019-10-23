@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:	bean的生命周期
-subtitle: 	bean的生命周期
+title:	Spring专题
+subtitle: 	Bean的生命周期
 date:       2019-08-24
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
@@ -10,9 +10,25 @@ tags:
     - spring
 ---
 
-# bean的生命周期
+# Bean的生命周期
 
+```
+bean的生命周期？
 
+ioc依赖反转原理？(spring如何管理bean的，ioc需要理解的点列一下)
+怎么解决循环依赖的问题的
+
+aop原理？（面向切面的编程实例，比如@Transactional 是怎么实现aop的？ java反射和动态代理机制）
+利用（java动态代理和cglib）生成代理类，在目标方法调用的前后加入需要加入的代码逻辑，比如开始事务，事务提交或回滚。
+spring中的设计模式？（工厂模式，适配器模式，阅读对应代码画出uml图）
+
+组件扫描（如何找到一个组件并将其添加到容器）
+bean的实例化（何时初始化，如何初始化，如何依赖注入）
+钩子函数（常见的钩子函数及其作用）
+面向切面编程的原理（何时、如何为@Transactional创建代理类）
+如何实现自动配置、如何去xml
+为什么在启动类上加@EnableTransactionManagement注解就能让系统支持事务能力
+```
 
 ### 静态注入
 
