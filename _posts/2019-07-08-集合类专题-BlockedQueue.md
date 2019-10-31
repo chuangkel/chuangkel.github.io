@@ -33,7 +33,7 @@ tags:
 public interface BlockingQueue<E> extends Queue<E> {
     //添加到队列尾，如果成功返回true,如果失败（队列满了）将抛出{@code IllegalStateException}
     boolean add(E e);
-	//添加元素到队尾，如果成功返回true,如果添加失败则返回false,队列满不会抛出异常
+	//添加元素到队尾，如果成功返回true,如果添加失败则返回false,队列满不会抛出异常，线程池用的是这个方法
     boolean offer(E e);
    	//添加元素到队尾，如果队列满了会等待有效的空间出现
     void put(E e) throws InterruptedException;

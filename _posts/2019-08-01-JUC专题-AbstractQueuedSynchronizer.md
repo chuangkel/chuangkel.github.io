@@ -46,7 +46,9 @@ tags:
 
 6. 什么时候唤醒后继者呢？
 
-     
+7. 重入是怎么实现的？
+
+      
 
 
 ### 同步队列
@@ -68,7 +70,7 @@ static final class Node {
     volatile Node prev;//同步队列中元素的上一个节点
     volatile Node next;//同步队列中元素的下一个节点
     volatile Thread thread; //入队列时的当前线程
-    Node nextWaiter; //标识当前节点的模式
+    Node nextWaiter; //标识下一个节点的模式
     Node(Thread thread, Node mode) {     // Used by addWaiter
         this.nextWaiter = mode; //标识当前节点的模式
         this.thread = thread;

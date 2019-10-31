@@ -55,7 +55,7 @@ final boolean nonfairTryAcquire(int acquires) {
             return true;
         }
     }
-    else if (current == getExclusiveOwnerThread()) {//同一线程再次进入
+    else if (current == getExclusiveOwnerThread()) {//重入锁实现点。同一线程再次进入
         int nextc = c + acquires;//state + 1
         if (nextc < 0) // overflow
             throw new Error("Maximum lock count exceeded");
