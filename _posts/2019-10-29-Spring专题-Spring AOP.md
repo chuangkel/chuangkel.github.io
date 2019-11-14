@@ -12,3 +12,4 @@ tags:
 
 # Spring AOP
 
+面向切面编程，在某一点（切点PointCut）加入特定功能的代码（增强Advice）。(切面Advisor = 切点+增强)

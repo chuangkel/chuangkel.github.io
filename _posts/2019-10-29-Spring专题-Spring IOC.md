@@ -508,3 +508,15 @@ public static void main(String[] args) {
 
 3. 注册
 
+
+
+BeanFactory和FactoryBean的区别
+
+```
+Interface to be implemented by objects used within a {@link BeanFactory} which
+are themselves factories for individual objects. If a bean implements this
+interface, it is used as a factory for an object to expose, not directly as a
+bean instance that will be exposed itself.
+```
+
+实现了FactoryBean的接口的类，它作为一个BeanFactory来对对象暴露，不直接作为一个bean的实例来暴露它自己。
