@@ -7,7 +7,7 @@ author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
 tags:
-    - 设计模式
+    - spring
 ---
 
 # Spring MVC

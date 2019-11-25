@@ -7,7 +7,7 @@ author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
 tags:
-    - java
+    - mybatis
 ---
 # PageHelper实现分页原理
 
