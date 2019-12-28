@@ -12,6 +12,8 @@ tags:
 
 # ReteLimiter
 
+1. RateLimiter 是令牌桶限速器，如每秒1个令牌桶，分别请求时间是1S 2.05S 3S，则令牌桶拿到令牌的时间是1S 2.05S 3.05S ,RateLimiter是会计算出下一次获取令牌的时间，有队列存放请求的线程吗 （阻塞队列）
+
 > ReteLimiter正如其名，速率控制。是google的一个qps控制器。
 
 1. **TPS**：Transactions Per Second（每秒传输的事物处理个数），即服务器**每秒**处理的事务数。TPS包括一条消息入和一条消息出，加上一次用户数据库访问。（业务TPS = CAPS × 每个呼叫平均TPS）
@@ -41,6 +43,8 @@ public static void main(String[] args) throws InterruptedException {
 
 ### 原理分析
 
+#### acquire
+
 ```java
 public double acquire(int permits) {
   long microsToWait = reserve(permits);//计算等待时间
@@ -49,26 +53,61 @@ public double acquire(int permits) {
 }
 ```
 
-```java
-final long reserveEarliestAvailable(int requiredPermits, long nowMicros) {
-  resync(nowMicros);
-  long returnValue = nextFreeTicketMicros;
-  double storedPermitsToSpend = min(requiredPermits, this.storedPermits);
-  double freshPermits = requiredPermits - storedPermitsToSpend;
-  long waitMicros = storedPermitsToWaitTime(this.storedPermits, storedPermitsToSpend)
-      + (long) (freshPermits * stableIntervalMicros);
 
-  try {
-    this.nextFreeTicketMicros = LongMath.checkedAdd(nextFreeTicketMicros, waitMicros);
-  } catch (ArithmeticException e) {
-    this.nextFreeTicketMicros = Long.MAX_VALUE;
+
+####  reserve
+
+这里控制了多线程的并发，采用synchronized对对象加锁来控制多线程的并发
+
+```java
+final long reserve(int permits) {
+  checkPermits(permits);
+  synchronized (mutex()) {
+    return reserveAndGetWaitLength(permits, stopwatch.readMicros());
   }
-  this.storedPermits -= storedPermitsToSpend;
-  return returnValue;
 }
 ```
 
+```java
+final long reserveAndGetWaitLength(int permits, long nowMicros) {
+  long momentAvailable = reserveEarliestAvailable(permits, nowMicros);
+  return max(momentAvailable - nowMicros, 0);
+}
+```
 
+#### SmoothRateLimiter
+
+```java
+abstract class SmoothRateLimiter extends RateLimiter{
+  @Override
+final long reserveEarliestAvailable(int requiredPermits, long nowMicros) {
+    resync(nowMicros);
+    long returnValue = nextFreeTicketMicros;
+    double storedPermitsToSpend = min(requiredPermits, this.storedPermits);
+    double freshPermits = requiredPermits - storedPermitsToSpend;
+    long waitMicros = storedPermitsToWaitTime(this.storedPermits, storedPermitsToSpend)
+        + (long) (freshPermits * stableIntervalMicros);
+
+    try {
+      this.nextFreeTicketMicros = LongMath.checkedAdd(nextFreeTicketMicros, waitMicros);
+    } catch (ArithmeticException e) {
+      this.nextFreeTicketMicros = Long.MAX_VALUE;
+    }
+    this.storedPermits -= storedPermitsToSpend;
+    return returnValue;
+  }
+    //每次调用的时候都会继续计算，惰性计算令牌
+void resync(long nowMicros) {
+    // if nextFreeTicket is in the past, resync to now
+    if (nowMicros > nextFreeTicketMicros) {
+      storedPermits = min(maxPermits,
+          storedPermits
+            + (nowMicros - nextFreeTicketMicros) / coolDownIntervalMicros());
+      nextFreeTicketMicros = nowMicros;
+    }
+  }
+}
+```
 
 ####  nextFreeTicketMicros
 

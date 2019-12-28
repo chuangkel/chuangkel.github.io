@@ -71,6 +71,71 @@ hello0
 
 ## 源码分析
 
+### CyclicBarrier
+
+```java
+public class CyclicBarrier {
+    /**
+     * Each use of the barrier is represented as a generation instance.
+     * The generation changes whenever the barrier is tripped, or
+     * is reset. There can be many generations associated with threads
+     * using the barrier - due to the non-deterministic way the lock
+     * may be allocated to waiting threads - but only one of these
+     * can be active at a time (the one to which {@code count} applies)
+     * and all the rest are either broken or tripped.
+     * There need not be an active generation if there has been a break
+     * but no subsequent reset.
+     */
+    private static class Generation {
+        boolean broken = false;
+    }
+
+    /** The lock for guarding barrier entry */
+    private final ReentrantLock lock = new ReentrantLock();
+    /** Condition to wait on until tripped */
+    private final Condition trip = lock.newCondition();
+    /** The number of parties */
+    private final int parties;
+    /* The command to run when tripped */
+    private final Runnable barrierCommand;
+    /** The current generation */
+    private Generation generation = new Generation();
+
+    /**
+     * Number of parties still waiting. Counts down from parties to 0
+     * on each generation.  It is reset to parties on each new
+     * generation or when broken.
+     */
+    private int count;
+
+    /**
+     * Updates state on barrier trip and wakes up everyone.
+     * Called only while holding lock.
+     */
+    private void nextGeneration() {
+        // signal completion of last generation
+        trip.signalAll();
+        // set up next generation
+        count = parties;
+        generation = new Generation();
+    }
+
+    /**
+     * Sets current barrier generation as broken and wakes up everyone.
+     * Called only while holding lock.
+     */
+    private void breakBarrier() {
+        generation.broken = true;
+        count = parties;
+        trip.signalAll();
+    }
+}
+```
+
+### 内部方法
+
+#### await
+
 > 多线程在栅栏停住，指定数量线程到位之后同时被唤醒
 
 ```java
@@ -82,6 +147,8 @@ public int await() throws InterruptedException, BrokenBarrierException {
     }
 }
 ```
+
+#### dowait
 
 > 调用了dowait()
 
@@ -103,14 +170,14 @@ private int dowait(boolean timed, long nanos)
         }
 
         int index = --count;//此处需同步
-        if (index == 0) {  // tripped
+        if (index == 0) {  // tripped，栅栏倾倒
             boolean ranAction = false;
             try {
                 final Runnable command = barrierCommand;
                 if (command != null)
                     command.run();//执行所有线程到达之后的任务
                 ranAction = true;
-                nextGeneration();
+                nextGeneration();//status值减到0时，进入下一代，status又变为初始值parties，把条件队列的节点加入到同步队列（是线程安全的，外面加了重入锁），该线程unlock后会唤醒前面加到同步队列的线程。
                 return 0;
             } finally {
                 if (!ranAction)
@@ -122,9 +189,9 @@ private int dowait(boolean timed, long nanos)
         for (;;) {
             try {
                 if (!timed)
-                    trip.await();
+                    trip.await(); //关键：加入到条件队列，等到栅栏倾倒时把条件队列的节点加入到同步队列
                 else if (nanos > 0L)
-                    nanos = trip.awaitNanos(nanos);//返回nanos会小于0吗
+                    nanos = trip.awaitNanos(nanos);
             } catch (InterruptedException ie) {
                 if (g == generation && ! g.broken) {
                     breakBarrier();
@@ -151,5 +218,26 @@ private int dowait(boolean timed, long nanos)
     } finally {
         lock.unlock();
     }
+}
+```
+
+
+
+### 内部类
+
+```java
+/**
+ * Each use of the barrier is represented as a generation instance.
+ * The generation changes whenever the barrier is tripped, or
+ * is reset. There can be many generations associated with threads
+ * using the barrier - due to the non-deterministic way the lock
+ * may be allocated to waiting threads - but only one of these
+ * can be active at a time (the one to which {@code count} applies)
+ * and all the rest are either broken or tripped.
+ * There need not be an active generation if there has been a break
+ * but no subsequent reset.
+ */
+private static class Generation {
+    boolean broken = false;
 }
 ```
