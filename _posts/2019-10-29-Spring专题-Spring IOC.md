@@ -16,7 +16,11 @@ tags:
 
 1. spring容器是什么
 
-   直观的说是ApplicationContext的一个实例，包含了BeanFactory的所有功能，主要用于**管理bean的整个生命周期**，同时监听？、个性化设置。
+   两部分，控制反转和依赖注入，控制反转主要是对创建对象的控制权交个容器处理，对象有单例模式和原型模式（prototype)，在web的容器中（也是继承ApplicationContext)，Bean的作用于还有requst，session，application。
+
+   主要用于管理bean的整个生命周期。为什么要有观察者模式呢 ？为什么不直触发事件呢？ （我的回答：目前用到的地方是dubbo暴露服务到注册中心，在回调事件里面刷新缓存。个人觉得是为了扩展性，为了程序能实现自己特定功能，在系统启动的时候）
+
+   
 
 2. spring容器启动做了哪些事？
    1. 加载环境配置（jdk路径，java版本等等），加载配置文件，
@@ -26,36 +30,40 @@ tags:
 
 
 3. spring容器的两种类型：
-   1. Spring BeanFactory类型，最简单的容器，用于**DI** (Dependency Injection 依赖注入)。依赖注入就是等对象创建完之后，扫描所有属性，如果发现有@Autowiere的，就获取bean设置一下。
+   1. Spring BeanFactory类型，最简单的容器，用于DI (Dependency Injection 依赖注入)。依赖注入就是等对象创建完之后，扫描所有属性，如果发现有@Autowiere(自动注入的一种)的，就获取bean设置一下。注入方式有setter方法注入，构造器注入，自动注入【@Autowired(Class类型注入),@Resource(通过类型，名字（id)自动注入）】
 
-      ![1571968229424](/..\img\1571968229424.png)
+      ![1571968229424](./..\img\1571968229424.png)
 
    2. ApplicationContext类型
 
       ApplicationContext是继承BeanFactory的，包含了BeanFactory的全部功能。
 
-![1571967291878](/..\img\1571967291878.png)
+![1571967291878](./..\img\1571967291878.png)
 
 
 
 
-
-2. 有多个工厂？
-   * 是的。工厂是单例。
 
 ## 容器启动过程
 
- IOC容器启动过程的逻辑主要在refresh方法中。
+ IOC容器启动过程中的refresh方法
 
 加载和刷新持久化的配置（配置可能是XML文件（bean定义等），属性文件，关联数据库表）。refresh作为一个启动方法，在失败的时候应该销毁已经创建的单例，避免资源的占用。换句话说，在调用该方法之后，要么单例全部创建，要么没有单例被创建。
 
-1. 创建BeanFactory实现类
-2. 加载BeanDefinition
-3. 
+1. 创建容器，也就是BeanFactory实现类
+
+2. 准备容器。设置类加载器和后置处理器。加载BeanDefinition，并且注入到DefaultListableBeanFactory中
+
+3. 实例化并且调用所有的BeanFactoryPostProcessor(BeanDefinition加载之后，单例实例化之前)，postProcessorBeanFactory方法主要是做了初始化工厂，添加一些特别的后置处理器，比如BeanDefinitionRegistryPostProcessor接口的实现类（功能是在BeanDefinition完全加载之后再对Bean进行修改） 。
+
+   顺序是先调用BeanDefinitionRegistry接口（也实现了BeanFactoryPostProcessor）的回调（有实现@Order @PriorityOrdered，进行排序再回调） ，然后才是BeanFactoryPostProcessor的回调方法postProcessorBeanFactory方法。
+
+4. 
    1. 初始化应用实践多路广播器
    2. 注册应用监听
    3. 触发广播器，回调监听
-4. 
+
+5. 
 
 ```java
 public abstract class AbstractApplicationContext extends DefaultResourceLoader
@@ -225,6 +233,39 @@ factory-method 静态工厂方法
 factory-bean 
 
 
+
+### Bean的生命周期
+
+
+
+实例化-> 初始化-> 销毁
+
+![image-20200104170434081](./..\img\bean_life.png)
+
+实例化
+
+BeanPostProcessor
+
+* postProcessBeforeInstantiation
+* postProcessAfterInstantiation
+
+InstantiationAwareBeanPostProcessor
+
+* postProcessBeforeInstantiation
+
+初始化
+
+InitializingBean
+
+* afterPropertiesSet()
+
+销毁
+
+DisposableBean
+
+* destroy
+
+ObjectProvider （懒汉）和 FactoryBean（非懒汉） 的区别
 
 
 
