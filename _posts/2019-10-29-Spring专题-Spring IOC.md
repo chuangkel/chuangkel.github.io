@@ -49,6 +49,14 @@ tags:
 
 加载和刷新持久化的配置（配置可能是XML文件（bean定义等），属性文件，关联数据库表）。refresh作为一个启动方法，在失败的时候应该销毁已经创建的单例，避免资源的占用。换句话说，在调用该方法之后，要么单例全部创建，要么没有单例被创建。
 
+1. 创建BeanFactory实现类
+2. 加载BeanDefinition
+3. 
+   1. 初始化应用实践多路广播器
+   2. 注册应用监听
+   3. 触发广播器，回调监听
+4. 
+
 ```java
 public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		implements ConfigurableApplicationContext {
@@ -520,3 +528,80 @@ bean instance that will be exposed itself.
 ```
 
 实现了FactoryBean的接口的类，它作为一个BeanFactory来对对象暴露，不直接作为一个bean的实例来暴露它自己。
+
+ApplicationListener接口实现方法一般用来在启动时初始化缓存，注册服务（dubbo服务暴露），一些数据的加载。 多线程进行回调
+
+```java
+public class MyAppListener implements ApplicationListener {
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        System.out.println("myAppListener...spring容器最后一步，触发事件监听");
+    }
+}		
+```
+
+说明ApplicationListener是最后一个触发的
+
+```java
+@Component
+@Order(1)
+public class AppInitializer implements ApplicationContextAware,ApplicationListener {
+    private static Logger logger = LoggerFactory.getLogger(ApplicationContextAware.class);
+    private RedisConfigManager redisConfigManager ;
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        RedisConfigManager redisConfigManager = applicationContext.getBean(RedisConfigManager.class);
+        //redisConfigManager.resetSequence();
+        logger.info("=> 获取缓存管理");
+        this.redisConfigManager = redisConfigManager;
+    }
+
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        redisConfigManager.resetSequence();
+        logger.info("=> 更新缓存");
+    }
+}
+```
+
+```java
+public class BeanDefinitionHolder implements BeanMetadataElement {
+
+   private final BeanDefinition beanDefinition;
+
+   private final String beanName;
+
+   private final String[] aliases;
+}
+```
+
+核心点
+
+```java
+protected Set<BeanDefinitionHolder> doScan(String... basePackages) {
+   Assert.notEmpty(basePackages, "At least one base package must be specified");
+   Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<>();
+   for (String basePackage : basePackages) {
+      Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
+      for (BeanDefinition candidate : candidates) {
+         ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
+         candidate.setScope(scopeMetadata.getScopeName());
+         String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
+         if (candidate instanceof AbstractBeanDefinition) {
+            postProcessBeanDefinition((AbstractBeanDefinition) candidate, beanName);
+         }
+         if (candidate instanceof AnnotatedBeanDefinition) {
+            AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
+         }
+         if (checkCandidate(beanName, candidate)) {
+            BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
+            definitionHolder =
+                  AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+            beanDefinitions.add(definitionHolder);
+            registerBeanDefinition(definitionHolder, this.registry);
+         }
+      }
+   }
+   return beanDefinitions;
+}
+```
