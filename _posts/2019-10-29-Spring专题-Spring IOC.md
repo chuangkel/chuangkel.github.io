@@ -234,7 +234,7 @@ factory-bean
 
 
 
-### Bean的生命周期
+#### Bean的生命周期
 
 
 
@@ -266,6 +266,21 @@ DisposableBean
 * destroy
 
 ObjectProvider （懒汉）和 FactoryBean（非懒汉） 的区别
+
+
+
+#### Bean的作用域
+
+```java
+public interface WebApplicationContext extends ApplicationContext {
+   String ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE = WebApplicationContext.class.getName() + ".ROOT";
+   String SCOPE_REQUEST = "request";
+   String SCOPE_SESSION = "session";
+   String SCOPE_GLOBAL_SESSION = "globalSession";
+   String SCOPE_APPLICATION = "application";
+   String SERVLET_CONTEXT_BEAN_NAME = "servletContext";
+}	
+```
 
 
 
@@ -308,10 +323,15 @@ ObjectProvider （懒汉）和 FactoryBean（非懒汉） 的区别
            return new Person();
        }
    }
-   //获取bean
-   AnnotationConfigApplicationContext ctx=new AnnotationConfigApplicationContext(MyConfig.class);
-           Person person1 = (Person) ctx.getBean("getPerson");
    ```
+   
+   ```java
+   //获取bean
+   AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(MyConfig.class);
+   Person person1 = (Person) ctx.getBean("getPerson");	
+   ```
+   
+   
 
 
 
@@ -319,7 +339,7 @@ ObjectProvider （懒汉）和 FactoryBean（非懒汉） 的区别
 
 先看下AnnotationConfigApplicationContext的UML类图继承关系：
 
-![1571974164861](D:\fileSystem\persons\Github\chuangkel.github.io\img\1571974164861.png)
+![1571974164861](./..\img\1571974164861.png)
 
 先不急，分析一下AnnotationConfigApplicationContext的直接父类，实例化了DefaultListableBeanFactory工厂。DefaultListableBeanFactory是Spring Ioc容器中非常重要的一个类，它实现了Ioc的很多功能，这里可以提供给我们的主角AnnotationConfigApplicationContext使用。
 
@@ -516,8 +536,6 @@ Spring三大核心功能
 
 3、声明式事务
 
-
-
 1. 容器启动要做的几件事
 
    - 定位
@@ -534,9 +552,9 @@ Spring三大核心功能
 
 ```java
 public static void main(String[] args) {
-    ClassPathResource classPathResource = new ClassPathResource("bean.xml"); // 1 
-    DefaultListableBeanFactory defaultListableBeanFactory = new DefaultListableBeanFactory(); // 2 创建容器
-    XmlBeanDefinitionReader xmlBeanDefinitionReader = new XmlBeanDefinitionReader(defaultListableBeanFactory); // 3
+    ClassPathResource classPathResource = new ClassPathResource("bean.xml"); //1.定位Bean路径 
+    DefaultListableBeanFactory defaultListableBeanFactory = new DefaultListableBeanFactory(); //2.创建容器
+    XmlBeanDefinitionReader xmlBeanDefinitionReader = new XmlBeanDefinitionReader(defaultListableBeanFactory); //3.注册BeanDesfinition
     xmlBeanDefinitionReader.loadBeanDefinitions(classPathResource); // 4
 }
 ```
@@ -549,7 +567,7 @@ public static void main(String[] args) {
 
       ClassPathResource两种是一种非URL路径或者"classpath:" pseudo-URL
 
-      ![1572858461732](/..\img\1572858461732.png)![1572858546322](/..\img\1572858546322.png)
+      ![1572858461732](./..\img\1572858461732.png)![1572858546322](./..\img\1572858546322.png)
 
 2. 加载
 
@@ -568,9 +586,9 @@ interface, it is used as a factory for an object to expose, not directly as a
 bean instance that will be exposed itself.
 ```
 
-实现了FactoryBean的接口的类，它作为一个BeanFactory来对对象暴露，不直接作为一个bean的实例来暴露它自己。
+实现了FactoryBean的接口的类，它作为一个BeanFactory来对对象暴露，不直接作为一个bean的实例来暴露它自己，拿到FactoryBean实例就可以拿到Bean实例。
 
-ApplicationListener接口实现方法一般用来在启动时初始化缓存，注册服务（dubbo服务暴露），一些数据的加载。 多线程进行回调
+ApplicationListener接口实现方法一般用来在启动时初始化缓存，注册服务（dubbo服务暴露），一些数据的加载。 可以采用多线程进行执行回调方法。
 
 ```java
 public class MyAppListener implements ApplicationListener {
