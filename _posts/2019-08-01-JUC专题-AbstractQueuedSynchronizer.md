@@ -293,7 +293,7 @@ static final class Node {
 
 
 
-## =>方法
+## AQS方法
 
 ### acquireQueued
 
@@ -557,7 +557,7 @@ final boolean transferForSignal(Node node) {
 }
 ```
 
-## =>Condition内部定义类
+## Condition实现类
 
 ```java
 public class ConditionObject implements Condition, java.io.Serializable {
@@ -566,83 +566,12 @@ public class ConditionObject implements Condition, java.io.Serializable {
     private transient Node firstWaiter;
     /** Last node of condition queue. */
     private transient Node lastWaiter;
-
-    /**
-     * Creates a new {@code ConditionObject} instance.
-     */
-    public ConditionObject() { }
-
-    // Internal methods
-
-    /**
-     * Adds a new waiter to wait queue.
-     * @return its new wait node
-     */
-    private Node addConditionWaiter() {
-        Node t = lastWaiter;
-        // If lastWaiter is cancelled, clean out.
-        if (t != null && t.waitStatus != Node.CONDITION) {
-            unlinkCancelledWaiters();
-            t = lastWaiter;
-        }
-        Node node = new Node(Thread.currentThread(), Node.CONDITION);
-        if (t == null)
-            firstWaiter = node;
-        else
-            t.nextWaiter = node;
-        lastWaiter = node;
-        return node;
-    }
-
-    /**
-     * Removes and transfers nodes until hit non-cancelled one or
-     * null. Split out from signal in part to encourage compilers
-     * to inline the case of no waiters.
-     * @param first (non-null) the first node on condition queue
-     */
-    private void doSignal(Node first) {
-        do {
-            if ( (firstWaiter = first.nextWaiter) == null)
-                lastWaiter = null;
-            first.nextWaiter = null;
-        } while (!transferForSignal(first) &&
-                 (first = firstWaiter) != null);
-    }
 ```
-#### doSignalAll
 
-```java
-    /**
-     * Removes and transfers all nodes.
-     * @param first (non-null) the first node on condition queue
-     */
-    private void doSignalAll(Node first) {
-        lastWaiter = firstWaiter = null;
-        do {
-            Node next = first.nextWaiter;
-            first.nextWaiter = null;
-            transferForSignal(first);//同步器方法，转换节点从条件队列到同步队列
-            first = next;
-        } while (first != null);
-    }
-```
+
 #### unlinkCancelledWaiters
 
 ```java
-    /**
-     * Unlinks cancelled waiter nodes from condition queue.
-     * Called only while holding lock. This is called when
-     * cancellation occurred during condition wait, and upon
-     * insertion of a new waiter when lastWaiter is seen to have
-     * been cancelled. This method is needed to avoid garbage
-     * retention in the absence of signals. So even though it may
-     * require a full traversal, it comes into play only when
-     * timeouts or cancellations occur in the absence of
-     * signals. It traverses all nodes rather than stopping at a
-     * particular target to unlink all pointers to garbage nodes
-     * without requiring many re-traversals during cancellation
-     * storms.
-     */
     private void unlinkCancelledWaiters() {
         Node t = firstWaiter;
         Node trail = null;
@@ -665,18 +594,8 @@ public class ConditionObject implements Condition, java.io.Serializable {
 ```
 #### signal
 
-```
-    // public methods
-
-    /**
-     * Moves the longest-waiting thread, if one exists, from the
-     * wait queue for this condition to the wait queue for the
-     * owning lock.
-     *
-     * @throws IllegalMonitorStateException if {@link #isHeldExclusively}
-     *         returns {@code false}
-     */
-    public final void signal() {
+```java
+    public final void signal() {//唤醒一个Condition节点
         if (!isHeldExclusively())
             throw new IllegalMonitorStateException();
         Node first = firstWaiter;
@@ -685,13 +604,19 @@ public class ConditionObject implements Condition, java.io.Serializable {
     }
 ```
 ```java
-    /**
-     * Moves all threads from the wait queue for this condition to
-     * the wait queue for the owning lock.
-     *
-     * @throws IllegalMonitorStateException if {@link #isHeldExclusively}
-     *         returns {@code false}
-     */
+private void doSignal(Node first) {
+    do {
+        if ( (firstWaiter = first.nextWaiter) == null)
+            lastWaiter = null;
+        first.nextWaiter = null;
+    } while (!transferForSignal(first) &&
+             (first = firstWaiter) != null); //只唤醒头结点
+}
+```
+
+#### signalAll
+
+```java
     public final void signalAll() {
         if (!isHeldExclusively())
             throw new IllegalMonitorStateException();
@@ -700,7 +625,18 @@ public class ConditionObject implements Condition, java.io.Serializable {
             doSignalAll(first);
     }
 ```
-#### awaitUninterruptibly
+```java
+//将Condition队列的所有Condition节点放入到同步节点中并唤醒它们
+private void doSignalAll(Node first) {
+    lastWaiter = firstWaiter = null;
+    do {
+        Node next = first.nextWaiter;
+        first.nextWaiter = null;
+        transferForSignal(first);//同步器方法，转换节点从条件队列到同步队列
+        first = next;
+    } while (first != null);
+}	
+```
 
 ```java
     /**
@@ -1186,4 +1122,85 @@ static {
   - Lock.lockInterruptibly()**等任何显示声明throws InterruptedException的方法**。
   - 被阻塞的nio Channel也会响应interrupt()，抛出ClosedByInterruptException，相应nio通道需要实现java.nio.channels.InterruptibleChannel接口
   - 还有一些阻塞方法不会响应interrupt，如等待进入synchronized段、Lock.lock()。他们不能被动的退出阻塞状态。
+
+## 趣题实践
+
+1. 循环打印ABABAB...十次
+
+```java
+public class ReentranLockTest {
+    static ReentrantLock reentrantLock = new ReentrantLock();
+    static Condition conditionA = reentrantLock.newCondition();
+    static Condition conditionB = reentrantLock.newCondition();
+    static CountDownLatch latch = new CountDownLatch(1);
+
+    public static void main(String[] args) {
+        PrintThread printThreadA = new PrintThread(reentrantLock, conditionA, conditionB, "A", latch);
+        PrintThread printThreadB = new PrintThread(reentrantLock, conditionB, conditionA, "B", latch);
+        Thread tA = new Thread(printThreadA);
+        Thread tB = new Thread(printThreadB);
+
+        tB.start();
+        try {
+            Thread.sleep(100L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        tA.start();
+    }
+}
+```
+
+
+
+```java
+public class PrintThread implements Runnable {
+    private int COUNT = 10;
+    private ReentrantLock reentrantLock;
+    private Condition conditionA;
+    private Condition conditionB;
+    private CountDownLatch latch;
+    private String c;
+
+    PrintThread(ReentrantLock reentrantLock, Condition conditionA, Condition conditionB, String c, CountDownLatch latch) {
+        this.reentrantLock = reentrantLock;
+        this.conditionA = conditionA;
+        this.conditionB = conditionB;
+        this.c = c;
+        this.latch = latch;
+    }
+
+    @Override
+    public void run() {
+        try {
+            if (c.equals("A")) {
+                //保证A先加锁
+                reentrantLock.lock();
+                latch.countDown();
+            } else {
+                latch.await();
+                reentrantLock.lock();//这里会等待conditionA.await()执行才能继续
+            }
+
+            for (int i = 0; i < COUNT; i++) {
+                System.out.print(c);
+                try {
+                    conditionB.signal(); //将一个Condition节点放入等待队列，等待执行
+                    if (i < COUNT - 1) {
+                        conditionA.await(); //此处是关键，会将锁state清空
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            reentrantLock.unlock();
+        }
+    }
+}
+```
+
+#### 三线程循环打印ABC十次？
 
