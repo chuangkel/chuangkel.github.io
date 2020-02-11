@@ -2,7 +2,7 @@
 layout:     post
 title:	Zookeeper专题
 subtitle: 	zookeeper
-date:       2020-08-29~
+date:       ~2020-08-29~
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
