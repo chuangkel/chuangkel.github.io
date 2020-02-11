@@ -664,3 +664,30 @@ protected Set<BeanDefinitionHolder> doScan(String... basePackages) {
    return beanDefinitions;
 }
 ```
+
+
+
+## 循环依赖问题
+
+注入方式 
+
+1. setter注入
+2. 构造器注入
+3. 自动注入（Resource、Autowired)
+
+Bean类型
+
+1. 单例模式
+2. 原型模式
+
+
+
+以下组合场景在循环依赖问题下能否解决：
+
+| Bean类型\注入方式 | setter注入 | 构造器注入 |      |
+| ----------------- | ---------- | ---------- | ---- |
+| 单例模式          |            |            |      |
+| 原型模式          |            |            |      |
+
+是否懒加载
+
