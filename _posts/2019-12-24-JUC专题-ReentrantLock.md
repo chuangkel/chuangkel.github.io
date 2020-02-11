@@ -187,8 +187,9 @@ public final void acquireInterruptibly(int arg)
 
 ### ReentrantLock和Synchronized的区别？
 
-| 区别 | ReentrantLock      | Synchronized  |
-| ---- | ------------------ | ------------- |
-| 实现 | 基于Unsafe类的实现 | jvm层面的实现 |
-|      |                    |               |
+| 区别             | ReentrantLock                                                | Synchronized   |
+| ---------------- | ------------------------------------------------------------ | -------------- |
+| 实现             | 基于Unsafe类的实现来挂起和唤醒线程，采用双向链表的方式存储等待的线程节点， | jvm层面的实现  |
+| 公平性和非公平锁 | 可以实现公平锁和非公平锁                                     | 只能使用公平锁 |
+|                  |                                                              |                |
 
