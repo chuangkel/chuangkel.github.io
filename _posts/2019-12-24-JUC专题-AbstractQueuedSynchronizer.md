@@ -2,7 +2,7 @@
 clayout:     post
 title:		JUC专题
 subtitle: 	AbstractQueuedSynchronizer同步器
-date:       2019-08-01
+date:       2019-12-24
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
