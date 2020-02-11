@@ -2,7 +2,7 @@
 layout:     post
 title:	Spring专题
 subtitle: 	Spring IOC
-date:       2019-10-29
+date:       2019-12-25
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
