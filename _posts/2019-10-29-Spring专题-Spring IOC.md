@@ -32,13 +32,13 @@ tags:
 3. spring容器的两种类型：
    1. Spring BeanFactory类型，最简单的容器，用于DI (Dependency Injection 依赖注入)。依赖注入就是等对象创建完之后，扫描所有属性，如果发现有@Autowiere(自动注入的一种)的，就获取bean设置一下。注入方式有setter方法注入，构造器注入，自动注入【@Autowired(Class类型注入),@Resource(通过类型，名字（id)自动注入）】
 
-      ![1571968229424](./..\img\1571968229424.png)
+      ![1571968229424](/..\img\1571968229424.png)
 
    2. ApplicationContext类型
 
       ApplicationContext是继承BeanFactory的，包含了BeanFactory的全部功能。
 
-![1571967291878](./..\img\1571967291878.png)
+![1571967291878](/..\img\1571967291878.png)
 
 
 
@@ -234,13 +234,13 @@ factory-bean
 
 
 
-#### Bean的生命周期
+### Bean的生命周期
 
 
 
 实例化-> 初始化-> 销毁
 
-![image-20200104170434081](./..\img\bean_life.png)
+![image-20200104170434081](/..\img\bean_life.png)
 
 
 
@@ -321,9 +321,20 @@ com.github.chuangkel.beanCyclieLife.Teacher.myDestroy
 
 #### Bean生命周期走势图
 
-![1581426228359](..\img\1581426228359.png)
+![1581426228359](/..\img\1581426228359.png)
 
-![1581426712180](..\img\1581426712180.png)
+![1581426712180](/..\img\1581426712180.png)
+
+#### Bean生命周期中方法的级别
+
+* Bean自身的方法：Bean本身的方法和配置文件中<bean>中init-method和destroy-method方法
+
+* 容器级别：BeanPostProcessor和InstantiationAwareBeanPostProcessor的接口方法 后置处理器，在容器加载完配置文件之后立即调用
+  * 工厂后处理器方法：AspectJWeavingEnabler, ConfigurationClassPostProcessor, CustomAutowireConfigurer 
+
+* Bean级别：BeanFactoryAware,BeanNameAware,BeanClassLoaderAware,InitializingBean,DisposableBean这几个接口的方法
+
+
 
 #### Bean的作用域
 
@@ -395,7 +406,7 @@ public interface WebApplicationContext extends ApplicationContext {
 
 先看下AnnotationConfigApplicationContext的UML类图继承关系：
 
-![1571974164861](./..\img\1571974164861.png)
+![1571974164861](/..\img\1571974164861.png)
 
 先不急，分析一下AnnotationConfigApplicationContext的直接父类，实例化了DefaultListableBeanFactory工厂。DefaultListableBeanFactory是Spring Ioc容器中非常重要的一个类，它实现了Ioc的很多功能，这里可以提供给我们的主角AnnotationConfigApplicationContext使用。
 
@@ -623,7 +634,7 @@ public static void main(String[] args) {
 
       ClassPathResource两种是一种非URL路径或者"classpath:" pseudo-URL
 
-      ![1572858461732](./..\img\1572858461732.png)![1572858546322](./..\img\1572858546322.png)
+      ![1572858461732](/..\img\1572858461732.png)![1572858546322](./..\img\1572858546322.png)
 
 2. 加载
 
