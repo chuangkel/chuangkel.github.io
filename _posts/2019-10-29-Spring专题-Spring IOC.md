@@ -242,6 +242,8 @@ factory-bean
 
 ![image-20200104170434081](./..\img\bean_life.png)
 
+
+
 实例化
 
 BeanPostProcessor
@@ -268,6 +270,60 @@ DisposableBean
 ObjectProvider （懒汉）和 FactoryBean（非懒汉） 的区别
 
 
+
+
+
+org.springframework.beans.factory.config.BeanFactoryPostProcessor#postProcessBeanFactory
+
+
+
+```java
+<bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+    <property name="beanNames">
+        <list>
+            <value>AAA</value>
+            <value>BBB</value>
+        </list>
+    </property>
+    <property name="interceptorNames">
+        <list>
+            <value>facadeInterceptor</value>
+        </list>
+    </property>
+</bean>
+```
+
+
+
+Bean的生命周期 ，打印方法调用过程
+
+```java
+com.github.chuangkel.beanCyclieLife.MyBeanFactoryPostProcessor.postProcessBeanFactory
+19:27:25.121 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'myBeanPostProcessor'
+19:27:25.122 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'myInstantiationAwareBeanPostProcessor'
+19:27:25.129 [main] DEBUG org.springframework.beans.factory.support.DefaultListableBeanFactory - Creating shared instance of singleton bean 'teacher'
+com.github.chuangkel.beanCyclieLife.MyInstantiationAwareBeanPostProcessor.postProcessBeforeInstantiation
+com.github.chuangkel.beanCyclieLife.MyInstantiationAwareBeanPostProcessor.postProcessAfterInstantiation
+com.github.chuangkel.beanCyclieLife.MyInstantiationAwareBeanPostProcessor.postProcessProperties
+com.github.chuangkel.beanCyclieLife.Teacher.setBeanName
+com.github.chuangkel.beanCyclieLife.Teacher.setBeanClassLoader
+com.github.chuangkel.beanCyclieLife.Teacher.setBeanFactory
+com.github.chuangkel.beanCyclieLife.MyBeanPostProcessor.postProcessBeforeInitialization
+com.github.chuangkel.beanCyclieLife.MyInstantiationAwareBeanPostProcessor.postProcessBeforeInitialization
+com.github.chuangkel.beanCyclieLife.Teacher.afterPropertiesSet
+com.github.chuangkel.beanCyclieLife.Teacher.myInit
+com.github.chuangkel.beanCyclieLife.MyBeanPostProcessor.postProcessAfterInitialization
+com.github.chuangkel.beanCyclieLife.MyInstantiationAwareBeanPostProcessor.postProcessAfterInitialization
+19:27:25.237 [SpringContextShutdownHook] DEBUG org.springframework.context.support.ClassPathXmlApplicationContext - Closing org.springframework.context.support.ClassPathXmlApplicationContext@2a3046da, started on Tue Feb 11 19:27:24 GMT+08:00 2020
+com.github.chuangkel.beanCyclieLife.Teacher.destroy
+com.github.chuangkel.beanCyclieLife.Teacher.myDestroy
+```
+
+#### Bean生命周期走势图
+
+![1581426228359](..\img\1581426228359.png)
+
+![1581426712180](..\img\1581426712180.png)
 
 #### Bean的作用域
 
@@ -691,3 +747,8 @@ Bean类型
 
 是否懒加载
 
+
+
+Bean的生命周期？
+
+循环依赖的问题？
