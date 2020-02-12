@@ -14,29 +14,27 @@ tags:
 
 ### IOC概论
 
-1. spring容器是什么
+控制反转和依赖注入，控制反转主要是对创建对象的控制权交个容器处理，对象有单例模式和原型模式（prototype)，在web的容器中（也是继承ApplicationContext)，Bean的作用于还有requst，session，application。主要用于管理bean的整个生命周期。
 
-   两部分，控制反转和依赖注入，控制反转主要是对创建对象的控制权交个容器处理，对象有单例模式和原型模式（prototype)，在web的容器中（也是继承ApplicationContext)，Bean的作用于还有requst，session，application。
-
-   主要用于管理bean的整个生命周期。为什么要有观察者模式呢 ？为什么不直触发事件呢？ （我的回答：目前用到的地方是dubbo暴露服务到注册中心，在回调事件里面刷新缓存。个人觉得是为了扩展性，为了程序能实现自己特定功能，在系统启动的时候）
-
-   
-
-2. spring容器启动做了哪些事？
-   1. 加载环境配置（jdk路径，java版本等等），加载配置文件，
-   2. 实例化工厂单例bean 定位 加载 注册
-   3. 启动监听
+为什么要有观察者模式呢 ？为什么不直触发事件呢？ （比如dubbo暴露服务到注册中心，在回调事件里面刷新缓存。个人觉得是为了扩展性，为了程序能实现自己特定功能，在系统启动的时候）
 
 
 
-3. spring容器的两种类型：
-   1. Spring BeanFactory类型，最简单的容器，用于DI (Dependency Injection 依赖注入)。依赖注入就是等对象创建完之后，扫描所有属性，如果发现有@Autowiere(自动注入的一种)的，就获取bean设置一下。注入方式有setter方法注入，构造器注入，自动注入【@Autowired(Class类型注入),@Resource(通过类型，名字（id)自动注入）】
+spring容器启动做了哪些事？
+1. 加载环境配置（jdk路径，java版本等等），加载配置文件，
+2. 实例化工厂单例bean 定位 加载 注册
+3. 启动监听
 
-      ![1571968229424](/..\img\1571968229424.png)
 
-   2. ApplicationContext类型
 
-      ApplicationContext是继承BeanFactory的，包含了BeanFactory的全部功能。
+spring容器的两种类型：
+1. Spring BeanFactory类型，最简单的容器，用于DI (Dependency Injection 依赖注入)。依赖注入就是等对象创建完之后，扫描所有属性，如果发现有@Autowiere(自动注入的一种)的，就获取bean设置一下。注入方式有setter方法注入，构造器注入，自动注入【@Autowired(Class类型注入),@Resource(通过类型，名字（id)自动注入）】
+
+   ![1571968229424](/..\img\1571968229424.png)
+
+2. ApplicationContext类型
+
+   ApplicationContext是继承BeanFactory的，包含了BeanFactory的全部功能。
 
 ![1571967291878](/..\img\1571967291878.png)
 
