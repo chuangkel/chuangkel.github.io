@@ -215,11 +215,11 @@ private void doReleaseShared() {
 
 * CountDownLatch
   * 在子线程未完成之前，主线程会一直处于挂起状态。（LockSupport.park())
-  * 子线程的控制方法不同。CountDownLatch中，多个子线程的控制，让各自子线程去定义任务结束的条件，即调用countDown()的时机。而thread.join()是必须等待子线程执行完成，在主线程中调用thread.join()来实现的。
+  * 子线程的控制方法不同。CountDownLatch中，多个子线程的控制，让各自子线程去定义任务结束的条件，即调用countDown()的时机，这个时候子线程不一定结束了。thread.join()是必须等待子线程执行完成，在主线程中调用thread.join()来实现的。
 * thread.join()
-  * 每个子线程都需要调用一遍thread.join()。（join需要线程实例来调用)
+  * 每个子线程都需要调用一遍thread.join()。（join需要线程实例来调用)，能多个子线程join()吗？ 可以的，thread.isAlive()来判断当前线程是否挂起（obj.wait(0)直接挂起等待唤醒），若后面的thread.join()方法的thread已经结束，调用join方法会直接返回（因为isAlive)
   * 若开启了多个子线程，然后调用了在主线程里使用子线程实例调用了join方法，主线程是按照调用join方法的顺序一个线程一个线程地等待子线程执行完成。前面join的子线程没执行完，主线程会一直等待。(在没传入参数的情况下)
-  * thread.join()方法的缺点：子线程未完成之前，主线程会一直运行就绪挂起，运行就绪挂起三种状态之间流转，比较耗费资源。
+  * thread.join()方法的缺点：子线程未完成之前，主线程会一直运行就绪挂起，运行就绪挂起三种状态之间流转？，比较耗费资源。
 
 ### thread.join()示例
 
@@ -250,7 +250,7 @@ main thread
 
 ## CountDownLatch（闭锁） 和 CyclicBarrier（栅栏）的区别
 
-* CountDownLatch（闭锁）是一个线程等待其他多个线程执行完指定代码之后才能被唤醒。被阻塞的的线程只有一个（即等待其他线程执行完的线程），其他执行任务的线程不会阻塞。
+* CountDownLatch（闭锁）是一个（多个）线程等待其他多个线程执行完指定代码之后才能被唤醒。被阻塞的的线程只有一个（即等待其他线程执行完的线程），**其他执行任务的线程不会阻塞（即调用.countDown()的线程），调用.countDown()的线程进行state--，state==0时唤醒.await的线程**。 怎么感觉像join呢？
 
-* CyclicBarrier（栅栏）是多个线程到达了各自线程内部的指定的点（调用await()的代码行），然后挂起，指定数量的线程中最后一个到达的线程会启动回调线程，然后唤醒之前挂起的所有线程。
+* CyclicBarrier（栅栏）是多个线程到达了各自线程内部的指定的点（调用await()的代码行），然后挂起，指定数量的线程中最后一个到达的线程会启动回调线程，然后唤醒之前挂起的所有线程，利用了ReentrantLock的.newCondition()，条件队列（链表，头指针，尾指针）。
 

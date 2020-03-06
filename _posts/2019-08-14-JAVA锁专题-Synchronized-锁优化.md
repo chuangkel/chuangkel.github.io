@@ -107,3 +107,51 @@ tags:
 
 适应性自旋是jvm通过之前的轻量级锁的占用的时间来动态调节后来线程的自旋时间。
 
+
+
+### 例子：
+
+```java
+public class VolatileB {
+    public static void main(String[] args) {
+        Object object = new Object();
+        Thread threadA = new Thread(() -> {
+            int i = 0;
+            while (true) {
+                synchronized (object) {
+                    if (i == 5) {
+                        object.notify();
+                        try {
+                            object.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    System.out.println(i);
+                    i++;
+                    i %= 9;
+                }
+            }
+        });
+
+        Thread threadB = new Thread(() -> {
+            while (true) {
+                synchronized (object) {
+                    try {
+                        object.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("这是B");
+                    object.notify();
+                }
+            }
+        });
+
+        threadA.start();
+        threadB.start();
+    }
+}
+```
+
+wait() notify()针对特定的对象，需要先获取锁监视器。
