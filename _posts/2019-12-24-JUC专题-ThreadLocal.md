@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:	Mybatis专题
-subtitle: 	PageHelper实现分页原理
+title:	JUC
+subtitle: 	ThreadLocal+PageHelper实现分页原理
 date:       2018-08-29
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
@@ -9,15 +9,54 @@ catalog: true
 tags:
     - mybatis
 ---
-# PageHelper实现分页原理
+# ThreadLocal
 
 
+
+set方法
+
+```java
+//java.lang.ThreadLocal#set
+public void set(T value) {
+    Thread t = Thread.currentThread();
+    ThreadLocalMap map = getMap(t);
+    if (map != null)
+        map.set(this, value);
+    else
+        createMap(t, value);
+}
+```
+
+
+
+```java
+//java.lang.Thread#threadLocals
+/* ThreadLocal values pertaining to this thread. This map is maintained
+ * by the ThreadLocal class. */
+ThreadLocal.ThreadLocalMap threadLocals = null;
+
+/*
+ * Inheritable ThreadLocal values pertaining to this thread. This map is
+ * maintained by the InheritableThreadLocal class.
+ */
+ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
+```
+
+强引用 软引用 弱引用  虚引用
+
+ThreadLocal 弱引用是key
+
+如果不remove会产生大对象，线程池执行完任务可能并没有销毁，执行下一个任务的时候会还能读取得到。
+
+
+
+### PageHelper实现分页原理
 
 >  PageHelper.offsetPage(PAGE_NUM, PAGE_SIZE) （页码，每页显示的数量）。
 >
 > 实际是在 ThreadLocal中设置了分页参数，之后在查询执行的时候，获取当线程中的分页参数，执行查询的时候通过拦截器在sql语句中添加分页参数，之后实现分页查询，查询结束后在 finally 语句中清除ThreadLocal中的查询参数。
 
-
+com.github.pagehelper.page.PageMethod#setLocalPage
 
 ```java
 protected static final ThreadLocal<Page> LOCAL_PAGE = new ThreadLocal<Page>();
