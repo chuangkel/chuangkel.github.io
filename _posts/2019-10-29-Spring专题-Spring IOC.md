@@ -14,7 +14,7 @@ tags:
 
 ### IOC概论
 
-控制反转和依赖注入，控制反转主要是对创建对象的控制权交个容器处理，对象有单例模式和原型模式（prototype)，在web的容器中（也是继承ApplicationContext)，Bean的作用于还有requst，session，application。主要用于管理bean的整个生命周期。
+控制反转，包含依赖查找和依赖注入两种方式，控制反转主要是对创建对象的控制权交个容器处理，对象有单例模式和原型模式（prototype)，在web的容器中（也是继承ApplicationContext)，Bean的作用于还有requst，session，application。主要用于管理bean的整个生命周期。
 
 为什么要有观察者模式呢 ？为什么不直触发事件呢？ （比如dubbo暴露服务到注册中心，在回调事件里面刷新缓存。个人觉得是为了扩展性，为了程序能实现自己特定功能，在系统启动的时候）
 
