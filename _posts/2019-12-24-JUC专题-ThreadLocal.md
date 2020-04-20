@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:	JUC
-subtitle: 	ThreadLocal+PageHelper实现分页原理
+subtitle: 	ThreadLocal
 date:       2018-08-29
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
@@ -11,21 +11,41 @@ tags:
 ---
 # ThreadLocal
 
+ThreadLocal存在的必要，如果是基本数据类型，即线程私有的，无需什么ThreadLocal。由于java内存结构，对象存放在公共区堆，线程A new一个对象，线程B中可以对A创建的对象进行修改，这是肯定的，若存在该对象的类型需要每个线程私有对象实例，ThreadLocal就是为这种情况开发的吧（我主管看法）。
+
+ThreadLocal只是对一种类型进行封装，并不存储对象实例，对象实例真正存放在线程本地ThreadLocal.ThreadLocalMap变量中，即Map结构中，所以一个线程可以存放多种类型的实例数据，存储在同一个Map中，数据存放在Value中，key为ThreadLocal实例。 可以定义多个ThreadLocal相同类型。
+
+ThreadLocal.ThreadLocalMap是Thread类中的属性之一，可以值是弱引用，GC时会回收，但是该ThreadLocal 是new出来的，所以有强引用指向它。
+
+ThreadLocalMap 是存放在数组中的，扩容是 2 * oldLen ，初始长度是16，扩容后长度和初始长度都和HashMap一样。
+
+问题：
+
+1. 为什么ThreadLocal使用的是弱引用，并且在Map的key值上使用了弱引用？
 
 
-set方法
+
+父子线程上下文传递：
 
 ```java
-//java.lang.ThreadLocal#set
-public void set(T value) {
-    Thread t = Thread.currentThread();
-    ThreadLocalMap map = getMap(t);
-    if (map != null)
-        map.set(this, value);
-    else
-        createMap(t, value);
+public class InheritableThreadLocalDemo {
+    static InheritableThreadLocal<String> inheritableThreadLocal = new InheritableThreadLocal<>();
+    static ThreadLocal<String> threadLocal = new ThreadLocal<>();
+    public static void main(String[] args) {
+        inheritableThreadLocal.set("父线程 : ThreadLocal 会传递到子线程");
+        threadLocal.set("父线程 : ThreadLocal 不会传递到子线程");
+        Thread thread1 = new Thread(() -> {
+            System.out.println(inheritableThreadLocal.get());
+            System.out.println(threadLocal.get());
+        });
+        thread1.start();
+    }
 }
+//输出：
+//父线程 : ThreadLocal 会传递到子线程
+//null
 ```
+
 
 
 
@@ -42,15 +62,75 @@ ThreadLocal.ThreadLocalMap threadLocals = null;
 ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
 ```
 
-强引用 软引用 弱引用  虚引用
+#### 强引用 软引用 弱引用  虚引用
 
 ThreadLocal 弱引用是key
 
 如果不remove会产生大对象，线程池执行完任务可能并没有销毁，执行下一个任务的时候会还能读取得到。
 
+弱引用通过isEnQueued()方法判断是否在标记队列，是否被垃圾回收器标记
+
+注意：
+
+使用线程池，线程使用结束后 需remove ThreadLocal，否则或干扰后面任务的执行。
 
 
-### PageHelper实现分页原理
+
+### ThreadLocal源码分析
+
+#### java.lang.ThreadLocal#set
+
+```java
+// 首先会获取当前线程的Map数据结构，再进行数据set
+public void set(T value) {
+    Thread t = Thread.currentThread(); //获取当前线程
+    ThreadLocalMap map = getMap(t); //获取当前线程本地变量
+    if (map != null)
+        map.set(this, value);
+    else
+        createMap(t, value); //当前线程ThreadLocal实例为空，创建一个，若父线程有继承，则会继承父线程的InheriableThreadLocal
+}
+	//java.lang.ThreadLocal#createMap
+ void createMap(Thread t, T firstValue) {
+        t.threadLocals = new ThreadLocalMap(this, firstValue); //this 是ThreadLocal的实例，也是Map的key,即虚引用。
+    }
+```
+
+#### java.lang.ThreadLocal.ThreadLocalMap#remove
+
+```java
+/**  Remove the entry for key. */
+private void remove(ThreadLocal<?> key) {
+    Entry[] tab = table;
+    int len = tab.length;
+    int i = key.threadLocalHashCode & (len-1);
+    for (Entry e = tab[i];
+         e != null;
+         e = tab[i = nextIndex(i, len)]) {
+        if (e.get() == key) {
+            e.clear(); //java.lang.ref.Reference#referent = null
+            expungeStaleEntry(i);
+            return;
+        }
+    }
+}
+```
+
+
+
+### WeakHashMap源码分析
+
+
+
+
+
+### ThreadLocal案例
+
+
+
+
+
+#### PageHelper实现分页原理
 
 >  PageHelper.offsetPage(PAGE_NUM, PAGE_SIZE) （页码，每页显示的数量）。
 >
@@ -83,7 +163,7 @@ PageInterceptor拦截器拦截query()查询方法
 
 
 
-### 过滤器(Filter)
+##### 过滤器(Filter)
 
 
 
@@ -93,7 +173,7 @@ PageInterceptor拦截器拦截query()查询方法
 
 ​	
 
-#### 反射机制
+##### 反射机制
 
 ##### jdk自带的InvocationHandler
 
