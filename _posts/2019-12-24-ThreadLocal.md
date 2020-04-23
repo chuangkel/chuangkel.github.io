@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:	JUC
-subtitle: 	ThreadLocal
+title:	ThreadLocal
+subtitle: 	
 date:       2018-08-29
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
