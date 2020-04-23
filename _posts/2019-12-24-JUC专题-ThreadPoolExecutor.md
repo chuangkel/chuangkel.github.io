@@ -578,4 +578,6 @@ public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactor
 
 
 
-## ForkJoinPool
+ForkJoinPool
+
+java.util.concurrent.CompletableFuture

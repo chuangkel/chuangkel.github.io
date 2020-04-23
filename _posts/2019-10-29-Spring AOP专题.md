@@ -84,3 +84,53 @@ public class MethodInterceptor implements org.aopalliance.intercept.MethodInterc
 ```
 
 **具体实现代理的源码请仔细看**
+
+# 事务传播机制
+
+
+
+### PROPAGATION_REQUIRED
+
+> 被注解的方法如果已经处于一个事务中，则加入到该事务中；如果没有处在任何事务中，则新启一个事务。如果被注解的方法发生异常，则加入到对应的方法的事务也会回滚。是spring默认的事务传播机制。
+
+
+
+
+
+### PROPAGATION_REQUIRES_NEW
+
+> 表示当前方法必须运行在它自己的事务中。一个新的事务将启动，而且如果有一个现有的事务在运行的话，则这个方法将在运行期被挂起，直到新的事务提交或者回滚才恢复执行。
+
+
+
+
+
+### PROPAGATION_NESTED
+
+> 表示如果当前方法正有一个事务在运行中，则该方法应该运行在一个嵌套事务中，被嵌套的事务可以独立于被封装的事务中进行提交或者回滚。如果封装事务存在，并且外层事务抛出异常回滚，那么内层事务必须回滚，反之，内层事务并不影响外层事务。如果封装事务不存在，则同PROPAGATION_REQUIRED的一样。
+
+
+
+
+
+### PROPAGATION_SUPPORTS
+
+> 支持当前事务，如果当前没有事务，就以非事务方式执行
+
+
+
+### PROPAGATION_NOT_SUPPORTED
+
+> 以非事务方式执行操作，如果当前存在事务，就把当前事务挂起
+
+
+
+### PROPAGATION_MANDATORY
+
+> 使用当前的事务，如果当前没有事务，就抛出异常
+
+
+
+### PROPAGATION_NEVER
+
+> 以非事务方式执行，如果当前存在事务，则抛出异常。
