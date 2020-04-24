@@ -3,7 +3,7 @@ title: chuangkel
 SEOTitle: chuangkel的博客 | chuangkel
 header-img: img/post-bg-desk.jpg
 email: chuangkelb@gmail.com
-description: "不积硅步,无以至千里。"
+description: "Learning Pratice Change"
 keyword: " chuangkel,java,spring,spring boot,spring cloud"
 url: "http://chuangkel.github.io"          # your host, for absolute URL
 baseurl: ""      # for example, '/blog' if your blog hosted on 'host/blog'
@@ -22,8 +22,8 @@ RSS: false
 #zhihu_username:     chuangkel
 github_username:    chuangkel
 #facebook_username:  baiying.qiu.7
-jianshu_username:   f58e25b8c1c5
-twitter_username:   Fortune42507946
+#jianshu_username:   f58e25b8c1c5
+#twitter_username:   Fortune42507946
 
 
 
@@ -61,7 +61,7 @@ kramdown:
 
 # Gitalk
 gitalk:
-  enable: true    #是否开启Gitalk评论
+  enable: false    #是否开启Gitalk评论
   clientID: f2c84e7629bb1446c1a4                            #生成的clientID
   clientSecret: ca6d6139d1e1b8c43f8b2e19492ddcac8b322d0d    #生成的clientSecret
   repo: chuangkel.github.io    #仓库名称
@@ -99,8 +99,8 @@ service-worker: true
 # Friends
 friends: [
     {
-        title: "简书",
-        href: "http://www.jianshu.com/"
+        title: "LeetCode",
+        href: "https://leetcode-cn.com/"
     },{
         title: "oracle",
         href: "https://www.oracle.com/"
