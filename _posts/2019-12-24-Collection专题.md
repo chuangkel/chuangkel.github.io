@@ -1,8 +1,8 @@
 ---
 layout:     post
-title:	Java数据结构
+title:	Collection专题
 subtitle: 	 
-date:       2019-07-06
+date:       2019-12-24
 author:     chuangkel
 header-img: img/post-bg-ios9-web.jpg
 catalog: true
