@@ -121,13 +121,13 @@ PriorityQueue
 
 
 
-### 问题
+**问题**
 
 1. 队列的数据结构？
 2. 阻塞队列有哪些特性？
 3. 怎么实现多线程的添加元素和获取元素的？怎么实现阻塞队列的特性的 ？即等待获取等待添加。
 
-### 接口方法
+**接口方法**
 
 ```java
 public interface BlockingQueue<E> extends Queue<E> {
@@ -153,7 +153,7 @@ public interface BlockingQueue<E> extends Queue<E> {
 }
 ```
 
-## ArrayBlockedQueue
+# ArrayBlockedQueue
 
 ```java
 public class ArrayBlockingQueue<E> extends AbstractQueue<E>
@@ -177,7 +177,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
 }
 ```
 
-#### 入队操作
+**入队操作**
 
 > add本质是调用了offer的实现，若offer返回false则抛异常
 
@@ -260,7 +260,7 @@ private E dequeue() {
 }
 ```
 
-#### 出队操作
+**出队操作**
 
 > put无限期等待，知道有效空间出现进行插入到队尾
 
@@ -318,7 +318,7 @@ private void enqueue(E x) {
 }
 ```
 
-### 总结
+**总结**
 
 1. 队列的数据结构？
 
@@ -342,8 +342,7 @@ private void enqueue(E x) {
 
    
 
-
-   ## 线程池中应用的几种阻塞队列 
+**线程池中应用的几种阻塞队列** 
 
    LinkedBlockingQueue
 
@@ -351,20 +350,9 @@ private void enqueue(E x) {
 
    SynchronousQueue
 
-# ConcurrentHashMap
-
-> 将hashCode无符号右移，即低位等于高位和低位异或运算，减少高位相同低位不同的hashCode导致hash碰撞（因为使用的是低位，减少hash碰撞）
-
-```java
-static final int hash(Object key) {
-        int h;
-        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
-}
-```
 
 
-
-## HashMap
+# HashMap
 
 > 如果容量sc小于0，表示有线程在初始化或者扩容。若sc大于0,则并发修改sizeCtl的值为-1(使用cas操作,高效),防止后面线程进来；扩容；还原sizeCtl。
 
@@ -395,7 +383,7 @@ private final Node<K,V>[] initTable() {
 
 
 
-### HashMap不加锁，高并发会发生什么？
+**HashMap不加锁，高并发会发生什么？**
 
 > 假设数组下标0key值为null，a 、b两个线程同时插入到下标0。同时判断都为null，都进入if内部，都插入到下标0， 后一个线程b会覆盖前一个线程a。
 
@@ -448,9 +436,22 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 
 
 
-## ConcurrentHashMap
 
-### ConcurrentHashMap怎么做到的同步？
+
+# ConcurrentHashMap
+
+> 将hashCode无符号右移，即低位等于高位和低位异或运算，减少高位相同低位不同的hashCode导致hash碰撞（因为使用的是低位，减少hash碰撞）
+
+```java
+static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+}
+```
+
+
+
+**ConcurrentHashMap**怎么做到的同步？
 
 
 
@@ -477,7 +478,8 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
         else {
             V oldVal = null;
             synchronized (f) {
-                if (tabAt(tab, i) == f) {//获得锁之后判断，防止扩容的变化
+                //类似双重检查 ，获得锁之后判断，防止扩容的变化
+                if (tabAt(tab, i) == f) {
                     if (fh >= 0) {//插入链表的情况
                         binCount = 1;//记录链表节点数量，若大于8，链表会转换成红黑树
                         for (Node<K,V> e = f;; ++binCount) {//遍历链表
