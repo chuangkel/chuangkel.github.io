@@ -134,3 +134,4 @@ public class MethodInterceptor implements org.aopalliance.intercept.MethodInterc
 ### PROPAGATION_NEVER
 
 > 以非事务方式执行，如果当前存在事务，则抛出异常。
+
