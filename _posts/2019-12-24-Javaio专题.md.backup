@@ -1,0 +1,203 @@
+---
+layout:     post
+title:	Javaio专题
+subtitle: 	
+date:       2019-12-24
+author:     chuangkel
+header-img: img/post-bg-ios9-web.jpg
+catalog: true
+tags:
+    - java
+---
+
+# Socket
+
+网络最基本的精神是将两台机器连在一起，并且相互“交谈“或者“沟通”。
+
+端口：一台机器上有很多端口，一般一个应用对应一个端口。
+
+```java
+public class InterAddressTest {
+    public static void main(String[] args) throws UnknownHostException {
+        InetAddress[] a = Inet4Address.getAllByName("www.baidu.com");
+        for(int i = 0; i < a.length;i++){
+            System.out.println(a[i].getHostAddress());
+        }
+        InetAddress[] localhost = Inet4Address.getAllByName(null);
+        for(int i = 0; i < localhost.length;i++){
+            System.out.println(localhost[i].getHostAddress());
+        }
+    }
+}
+```
+
+结果：
+
+```
+Connected to the target VM, address: '127.0.0.1:56275', transport: 'socket'
+180.101.49.12
+180.101.49.11
+Disconnected from the target VM, address: '127.0.0.1:56275', transport: 'socket'
+127.0.0.1
+```
+
+
+
+```java
+class Inet4AddressImpl implements InetAddressImpl {
+    public native String getLocalHostName() throws UnknownHostException;
+    public native InetAddress[]
+        lookupAllHostAddr(String hostname) throws UnknownHostException;
+    public native String getHostByAddr(byte[] addr) throws UnknownHostException;
+    private native boolean isReachable0(byte[] addr, int timeout, byte[] ifaddr, int ttl) 				throws IOException;
+}
+```
+
+
+
+
+
+## socket实践demo
+
+ServerSocket本身是一个socket，但是不用来收发数据，只用来侦听，并返回一个与客户端成功建立连接的socket。
+
+```java
+public class DemoServer {
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(8080);
+        Socket socket = serverSocket.accept();
+        InputStream inputStream = socket.getInputStream();
+        BufferedReader in =
+                new BufferedReader(new InputStreamReader(inputStream));
+        PrintWriter out =
+                new PrintWriter(
+                        new BufferedWriter(
+                                new OutputStreamWriter(socket.getOutputStream())),true);
+        while (true){
+            String hello = in.readLine();
+            System.out.println(hello);
+            out.println(hello);
+            if("END".equals(hello)) break;
+        }
+    }
+}
+```
+
+客户端Socket，指定服务端ip和端口
+
+```java
+public class DemoClient {
+    public static void main(String[] args) throws IOException {
+        InetAddress address = InetAddress.getByName(null);
+        Socket socket = new Socket(address,8080);
+        OutputStream outputStream = socket.getOutputStream();
+        PrintWriter out =
+                new PrintWriter(
+                        new PrintWriter(
+                                new BufferedWriter(
+                                        new OutputStreamWriter(outputStream))),true);
+        BufferedReader in =
+                new BufferedReader(
+                        new InputStreamReader(socket.getInputStream()));
+        for(int i = 0; i< 10; i++){
+            out.println("hello world"+i);
+            String str = in.readLine();
+            System.out.println(str);
+        }
+        out.println("END");
+        socket.close();
+    }
+}
+```
+
+
+
+
+
+# 深拷贝和浅拷贝
+
+
+
+## 深拷贝和浅拷贝
+
+l  基本概念
+
+实现对象的拷贝（所有属性），新拷贝的对象和原对象不相等（==号判定为false），Object类默认的拷贝方式为浅拷贝。
+
+l  实现方式
+
+对于要拷贝的对象实现Cloneable接口，该接口是一个标记接口。实现该接口的clone()方法，并调用Object的clone方法即可
+
+l  深拷贝和浅拷贝
+
+* 浅拷贝：如果拷贝的对象的属性是引用类型或者数组，那么即使拷贝后的对象和原对象不是同一个对象，但是拷贝后的对象所引用的对象或者数组和原对象引用相同，改变拷贝后的对象的引用对象或数组的值会影响原对象的属性值。
+
+* 深拷贝：对拷贝后的对象的任何属性修改都不影响原来对象的值。
+
+l  如何实现深拷贝
+
+方法一：对象的clone方法中，依次调用其所引用对象的clone方法拷贝出新的引用对象，将对象的引用指向这个新的对象。
+
+```java
+public class CloneFather implements Cloneable {
+    /**
+     * 浅复制：A对象中包含了对象B,复制对象A,B对象不会被复制，会将B对象的引用复制。
+     * 深复制：对象里包含的对象都复制。
+     */
+    private CloneChild child = new CloneChild("a");
+    private CloneChild[] children = {new CloneChild("a")};
+    
+    @Override
+    protected Object clone() {
+        CloneFather father = null;
+        try {
+            father = (CloneFather) super.clone();
+            father.child = (CloneChild) this.child.clone();
+            father.children = children.clone();
+            for (int i = 0; i < children.length; i++) {
+                father.children[i] = (CloneChild) this.children[i].clone();
+            }
+            return father;
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+}
+```
+
+
+
+方法二：通过序列化的方式，要拷贝的对象需要实现Serializable接口。将原对象通过ObjectOutputStream写入到ByteArrayOutputStream流中，然后再通过ObjectInputStream将流反序列为对象，即实现了对象的深拷贝。注意对象引用的对象也要实现Serializable接口
+
+```java
+public class SerializableCloneUtil {
+    public static <T extends Serializable> T clone(T object) throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream os = new ObjectOutputStream(bos);
+        os.writeObject(object);
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+        ObjectInputStream is = new ObjectInputStream(bis);
+        T t = (T)is.readObject();
+
+        os.close();
+        is.close();
+        bis.close();
+        bos.close();
+        return t;
+    }
+}
+```
+
+
+
+
+
+## 序列化拷贝
+
+```java
+result
+    .setBizData((Map<String, String>) SerializationUtils.deserialize(SerializationUtils
+        .serialize((HashMap<String, String>) bizTaskDef.getBizParameters())));
+```
