@@ -10,27 +10,45 @@ tags:
     - spring
 ---
 
-# Spring IOC 
+# Spring IOC
 
-### IOC概论
+### 定义
 
-控制反转，包含依赖查找和依赖注入两种方式，控制反转主要是对创建对象的控制权交个容器处理，对象有单例模式和原型模式（prototype)，在web的容器中（也是继承ApplicationContext)，Bean的作用于还有requst，session，application。主要用于管理bean的整个生命周期。
+IOC中文含义控制反转，英文 （Inversion Of Control）的缩写。
+
+控制反转主要是对创建对象的控制权交个容器处理，对象有单例模式和原型模式（prototype)，在web的容器中（也是继承ApplicationContext)，Bean的作用于还有requst，session，application。主要用于管理bean的整个生命周期。
+
+依赖查找是一种采用IOC提供的API获取依赖对象的方式。
+
+![1571968229424](./..\img\1571968229424.png)
+
+### IOC两种实现方式
+
+#### 依赖查找 
+
+#### 依赖注入 
+
+依赖注入就是等对象创建完之后，扫描所有属性，如果发现有@Autowiere(自动注入的一种)的，就获取bean设置一下。
+
+注入方式有setter方法注入，构造器注入，自动注入【@Autowired(Class类型注入),@Resource(通过类型，名字（id)自动注入）】
+
+
 
 为什么要有观察者模式呢 ？为什么不直触发事件呢？ （比如dubbo暴露服务到注册中心;在回调事件里面刷新缓存。个人觉得是为了扩展性，为了程序在系统启动的时候能实现自己特定功能。）
 
+### 容器启动过程
 
-
-spring容器启动做了哪些事？
+容器启动做了哪些事？
 1. 加载环境配置（jdk路径，版本...），加载配置文件。
 2. 实例化工厂单例bean 定位 加载 注册
 3. 启动监听
+4. 。。。
 
 
 
-spring容器的两种类型：
-1. Spring BeanFactory类型，最简单的容器，用于DI (Dependency Injection 依赖注入)。依赖注入就是等对象创建完之后，扫描所有属性，如果发现有@Autowiere(自动注入的一种)的，就获取bean设置一下。注入方式有setter方法注入，构造器注入，自动注入【@Autowired(Class类型注入),@Resource(通过类型，名字（id)自动注入）】
+#### spring容器的两种类型
 
-   ![1571968229424](./..\img\1571968229424.png)
+1. BeanFactory类型，最简单的容器，用于DI (Dependency Injection 依赖注入)。
 
 2. ApplicationContext类型
 
@@ -42,9 +60,7 @@ spring容器的两种类型：
 
 
 
-### 容器启动过程
-
- IOC容器启动过程中的refresh方法
+####  IOC容器启动过程中的refresh方法
 
 加载和刷新持久化的配置（配置可能是XML文件（bean定义等），属性文件，关联数据库表）。refresh作为一个启动方法，在失败的时候应该销毁已经创建的单例，避免资源的占用。换句话说，在调用该方法之后，要么单例全部创建，要么没有单例被创建。
 
@@ -60,8 +76,9 @@ spring容器的两种类型：
    1. 初始化应用实践多路广播器
    2. 注册应用监听
    3. 触发广播器，回调监听
-
-5. 
+4. 
+    。。。
+### org.springframework.context.support.AbstractApplicationContext#refresh源码
 
 ```java
 public abstract class AbstractApplicationContext extends DefaultResourceLoader
@@ -116,9 +133,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 }
 ```
 
+### org.springframework.context.support.AbstractApplicationContext#refresh源码解析
+
 1. **准备上下文刷新。**设置启动时间和激活标识，执行配置文件的的初始化（替换所有占位符）
 
-2. **调用子类方法创建BeanFactory，并刷新它。**
+2. **调用子类方法创建BeanFactory，并刷新它。** 
 
    调用子类方法创建一个BeanFactory并且清除它内部的信息。如果上下文刷新超过一次，或者bean工厂初始化失败将抛出异常。初始化BeanFactory：根据配置文件实例化BeanFactory，getBeanFactory()方法由具体子类实现。在这一步里，Spring将配置文件的信息解析成为一个个的BeanDefinition对象并装入到容器的Bean定义注册表（BeanDefinitionRegistry）中，但此时Bean还未初始化；obtainFreshBeanFactory()会调用自身的refreshBeanFactory(),而refreshBeanFactory()方法由子类AbstractRefreshableApplicationContext实现，该方法返回了一个创建的DefaultListableBeanFactory对象，这个对象就是由ApplicationContext管理的BeanFactory容器对象。
 
@@ -152,10 +171,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 调用工厂后处理器：根据反射机制从BeanDefinitionRegistry中找出所有BeanFactoryPostProcessor类型的Bean，并调用其postProcessBeanFactory()接口方法。
 
-经过第一步加载配置文件，已经把配置文件中定义的所有bean装载到BeanDefinitionRegistry这个Beanfactory中，对于ApplicationContext应用来说这个BeanDefinitionRegistry类型的BeanFactory就是Spring默认的DefaultListableBeanFactory
+经过第一步加载配置文件，已经把配置文件中定义的所有bean装载到BeanDefinitionRegistry这个Beanfactory中，对于ApplicationContext应用来说这个BeanDefinitionRegistry类型的BeanFactory就是Spring默认的DefaultListableBeanFactory.
 
-public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory
-                                                           implements ConfigurableListableBeanFactory, BeanDefinitionRegistry
+```public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory
+DefaultListableBeanFactory implements ConfigurableListableBeanFactory,BeanDefinitionRegistry
+```
 
 在这些被装载的bean中，若有类型为BeanFactoryPostProcessor的bean（配置文件中配置的），则将对应的BeanDefinition生成BeanFactoryPostProcessor对象
 
@@ -593,27 +613,19 @@ private static BeanDefinitionHolder registerPostProcessor(
 
 到这里，这个最长的方法我们分析完了。整个方法的后半部分是为了注册spring支持的各种注解的解析器。
 
-Spring三大核心功能
+### 容器启动要做的几件事
 
-1、IOC(DI)  IOC:Inversion of Control,DI:Dependency Injection
+- 定位
 
-2、AOP:Aspect Oriented Programming
+  1 代码指明了bean的路径
 
-3、声明式事务
+- 加载
 
-1. 容器启动要做的几件事
+  第 4 步进行了加载
 
-   - 定位
+- 注册
 
-     1 代码指明了bean的路径
-
-   - 加载
-
-     第 4 步进行了加载
-
-   - 注册
-
-     第2、3步进行了注册
+  第2、3步进行了注册
 
 ```java
 public static void main(String[] args) {
@@ -1884,3 +1896,10 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 
 
 
+### Spring三大核心功能
+
+1、IOC(DI)  IOC:Inversion of Control,DI:Dependency Injection
+
+2、AOP:Aspect Oriented Programming
+
+3、声明式事务
